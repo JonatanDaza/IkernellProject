@@ -187,7 +187,7 @@ export default function ManageProjectTeam({ project, assignedUsers: initialAssig
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-center space-x-2 whitespace-nowrap">
-                                            <Button variant={user.pivot.is_active_in_project ? "destructive_outline" : "default_outline"} size="sm" onClick={() => handleToggleDeveloperStatus(user.id, !user.pivot.is_active_in_project)}>
+                                            <Button className={`px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md shadow-sm disabled:opacity-50 ${user.pivot.is_active_in_project ? 'bg-red-100 text-red-800 dark:bg-red-700 dark:text-red-100' : 'bg-green-100 text-green-800 dark:bg-green-700 dark:text-green-100'}`} size="sm" onClick={() => handleToggleDeveloperStatus(user.id, !user.pivot.is_active_in_project)}>
                                                 {user.pivot.is_active_in_project ? 'Deactivate' : 'Activate'}
                                             </Button>
                                             <Button variant="destructive" size="sm" onClick={() => handleRemoveDeveloper(user.id)}>Remove</Button>

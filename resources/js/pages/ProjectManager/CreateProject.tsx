@@ -128,7 +128,10 @@ export default function CreateProject({ potentialLeaders, currentUserId }: Creat
                             <InputError message={errors.leader_id} className="mt-2" />
                         </div>
 
-                        <div className="flex items-center justify-end">
+                        <div className="flex items-center justify-end space-x-4">
+                            <Link href={route('project-manager.projects.manage')} className="text-sm text-gray-600 dark:text-gray-400 hover:underline"> {/* Ajusta a tu ruta de dashboard de coordinador */}
+                                Cancel
+                            </Link>
                             <Button
                                 type="submit"
                                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md shadow-sm disabled:opacity-50" // Estilo similar a botones de acción

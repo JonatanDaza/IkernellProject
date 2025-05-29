@@ -15,11 +15,13 @@ interface SimpleUser {
     email?: string; // Email es opcional aquí si solo se usa para mostrar
 }
 
+type ProjectStatus = 'active' | 'inactive' | 'finished'; // Consistent with ManageProjects
+
 interface ProjectData {
     id: number;
     name: string;
     description: string | null;
-    status: string;
+    status: ProjectStatus | string; // Use the defined type
     start_date: string | null;
     end_date: string | null;
     leader_id: number | null;
@@ -29,7 +31,7 @@ interface ProjectData {
 interface EditProjectProps {
     project: ProjectData;
     potentialLeaders: SimpleUser[];
-    projectStatusList: string[];
+    projectStatusList: ProjectStatus[]; // Use the defined type
     currentUserId: number; // Podría no ser necesario aquí, pero se pasa por consistencia
 }
 
@@ -37,7 +39,7 @@ export default function EditProject({ project, potentialLeaders, projectStatusLi
     const { data, setData, put, processing, errors, reset } = useForm({
         name: project.name || '',
         description: project.description || '',
-        status: project.status || 'active',
+        status: project.status || (projectStatusList.length > 0 ? projectStatusList[0] : 'active'),
         start_date: project.start_date || '',
         end_date: project.end_date || '',
         leader_id: project.leader_id?.toString() || '',

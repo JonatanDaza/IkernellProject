@@ -12,12 +12,13 @@ interface SimpleUser { // Para la lista de líderes
     name: string;
     lastname?: string | null; // Asumiendo que el apellido puede venir
 }
+type ProjectStatus = 'active' | 'inactive' | 'finished';
 
 interface Project {
     id: number;
     name: string;
     description: string | null;
-    status: 'active' | 'inactive' | 'finished' | string; // Estado del proyecto
+    status: ProjectStatus | string; // More specific status, fallback to string
     start_date: string | null; // YYYY-MM-DD
     end_date: string | null;   // YYYY-MM-DD
     leader_id: number | null;
@@ -28,7 +29,7 @@ interface Project {
 interface ManageProjectsProps {
     initialProjects: Project[];
     potentialLeaders: SimpleUser[]; // Lista de usuarios que son líderes
-    projectStatusList: string[]; // ej: ['active', 'inactive', 'finished']
+    projectStatusList: ProjectStatus[]; 
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -41,7 +42,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 export default function ManageProjects({
     initialProjects = [],
     potentialLeaders = [],
-    projectStatusList = ['active', 'inactive', 'finished'], // Default o desde el backend
+    projectStatusList = ['active', 'inactive', 'finished'] as ProjectStatus[], // Ensure default matches the type
 }: ManageProjectsProps) {
     const [projects, setProjects] = useState<Project[]>(initialProjects);
     const [searchTerm, setSearchTerm] = useState(''); // Para buscar por nombre de proyecto
@@ -140,7 +141,7 @@ export default function ManageProjects({
                         Projects Overview
                     </h1>
                     <Link href={route('project-manager.projects.create')}>
-                        <Button>Create New Project</Button> 
+                        <Button >Create New Project</Button> 
                         {/* Consider using a variant if available, e.g., <Button variant="default"> or <Button variant="primary"> */}
                     </Link>
                 </div>
@@ -215,15 +216,16 @@ export default function ManageProjects({
                                             variant={project.status === 'active' ? 'destructive_outline' : 'default_outline'}
                                             size="sm"
                                             onClick={() => handleSetProjectStatus(project.id, project.status)}
+                                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md shadow-sm disabled:opacity-50"
                                         >
                                             {project.status === 'active' ? 'Set Inactive' : 'Set Active'}
                                         </Button>
                                     )}
                                     <Link href={route('project-manager.projects.team.manage', project.id)}>
-                                        <Button variant="outline" size="sm">Manage Team</Button>
+                                        <Button variant="outline" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md shadow-sm disabled:opacity-50" size="sm">Manage Team</Button>
                                     </Link>
                                     <Link href={route('project-manager.projects.edit', project.id)}>
-                                        <Button variant="outline" size="sm">Edit Project</Button>
+                                        <Button variant="outline" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md shadow-sm disabled:opacity-50" size="sm">Edit Project</Button>
                                     </Link>
                                 </div>
                             </div>

@@ -26,7 +26,13 @@ class User extends Authenticatable
         'email',
         'password',
         'fecha_registro',
-        'tipo_usuario',
+        // 'tipo_usuario', // Se asume que 'role' es el campo principal para el rol.
+        'date_of_birth',
+        'identification_number',
+        'address',
+        'profession',
+        'worker_type',
+        'profile_photo_path',
         'specialty', // Make specialty fillable
         'is_active', // Add is_active to fillable
     ];
@@ -52,7 +58,13 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'fecha_registro' => 'date',
+            'date_of_birth' => 'date',
+            'identification_number' => 'string',
+            'address' => 'string',
+            'profession' => 'string',
             'specialty' => 'string', // Cast specialty as string
+            'worker_type' => 'string',
+            'profile_photo_path' => 'string',
             'is_active' => 'boolean', // Ensure is_active is cast to boolean
     ];
     }

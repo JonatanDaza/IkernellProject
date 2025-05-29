@@ -27,7 +27,6 @@ class ProjectManagementController extends Controller
         // Fetch users who can be assigned.
         // Fetch users who are leaders to populate the leader filter dropdown
         $potentialLeaders = User::where('role', 'leader') // Or your specific criteria for leaders
-            ->select('id', 'name')
             ->select('id', 'name', 'lastname') // Include lastname for the leader filter
             ->get();
 

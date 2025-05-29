@@ -38,11 +38,6 @@ const leaderNavItems: NavItem[] = [
         href: route('project-manager.projects.manage'), // Correctly use the route() helper
         icon: LayoutGrid,
     },
-    {
-        title: 'Create Project',
-        href: route('project-manager.projects.create'), // New link
-        icon: Folder, // Example icon
-    },
 ];
 const developerNavItems: NavItem[] = [
     {

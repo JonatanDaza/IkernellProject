@@ -1,117 +1,168 @@
 <?php
 
 namespace App\Http\Controllers;
-
-use App\Models\Desarrollador;
-use App\Models\Trabajador; // Import the Trabajador model to select associated workers
+ 
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
-
+use Illuminate\Validation\Rules;
+use Inertia\Inertia;
+use Inertia\Response;
+use Illuminate\Support\Facades\Storage;
+ 
 class DesarrolladorController extends Controller
 {
     /**
-     * Display a listing of the developer.
-     */
-    public function index()
-    {
-        // Eager load the 'trabajador' relationship to avoid N+1 query problem
-        $desarrolladores = Desarrollador::with('trabajador')->get();
-        return view('Developer.Develop', compact('desarrolladores'));
-    }
-
-    /**
      * Show the form for creating a new developer.
      */
-    public function create()
+    public function create(): Response
     {
-        // Get all trabajadores who are not already assigned as a Desarrollador, Coordinador, or Lider
-        // This prevents a single Trabajador from holding multiple specialized roles
-        $trabajadores = Trabajador::whereDoesntHave('desarrollador')
-                                ->whereDoesntHave('coordinadorProyecto')
-                                ->whereDoesntHave('liderProyecto')
-                                ->get();
-
-        return view('Developer.Create', compact('trabajadores'));
+        // Estas listas podrían venir de una tabla de configuración o ser hardcodeadas
+        $specialtyList = $this->getSpecialtyList();
+        $workerTypeList = $this->getWorkerTypeList();
+ 
+    return Inertia::render('Coordinator/Developers/Create', [ 
+        'specialtyList' => $specialtyList,
+        'workerTypeList' => $workerTypeList,
+    ]);
     }
-
+ 
     /**
      * Store a newly created developer in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request): \Illuminate\Http\RedirectResponse
     {
         $request->validate([
-            'id_trabajador' => [
-                'required',
-                'exists:trabajadores,id_trabajador',
-                Rule::unique('desarrolladores', 'id_trabajador'), // Ensure a trabajador is only a developer once
-                // Add more rules to prevent a trabajador from being other specialized roles
-                Rule::unique('coordinador_proyectos', 'id_trabajador'),
-                Rule::unique('lider_proyectos', 'id_trabajador'),
-            ],
-            'especialidad_desarrollo' => ['nullable', 'string', 'max:255'],
+            'name' => 'required|string|max:255',
+            'lastname' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'date_of_birth' => 'nullable|date',
+            'identification_number' => 'nullable|string|max:255|unique:users,identification_number',
+            'address' => 'nullable|string|max:1000',
+            'profession' => 'nullable|string|max:255',
+            'specialty' => ['required', 'string', Rule::in($this->getSpecialtyList())], // Use helper method
+            'worker_type' => ['required', 'string', Rule::in($this->getWorkerTypeList())], // Use helper method
+            'profile_photo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048', // 2MB Max
         ]);
-
-        Desarrollador::create($request->all());
-
-        return redirect()->route('Developer.Develop')->with('success', 'Desarrollador created successfully.');
+ 
+        $profilePhotoPath = null;
+        if ($request->hasFile('profile_photo')) {
+            // Guarda en 'public/profile-photos' y el path guardado será 'profile-photos/filename.jpg'
+            $profilePhotoPath = $request->file('profile_photo')->store('profile-photos', 'public');
+        }
+ 
+        User::create([
+            'name' => $request->name,
+            'lastname' => $request->lastname,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'role' => 'developer', // Asignar rol de desarrollador
+            'is_active' => true, // Activar por defecto
+            'date_of_birth' => $request->date_of_birth,
+            'identification_number' => $request->identification_number,
+            'address' => $request->address,
+            'profession' => $request->profession,
+            'specialty' => $request->specialty,
+            'worker_type' => $request->worker_type,
+            'profile_photo_path' => $profilePhotoPath,
+        ]);
+        // Redirigir a una página relevante para el coordinador, por ejemplo, la página principal del coordinador.
+        // Ajusta 'coordinator.coordinate' si tienes una ruta diferente para el dashboard del coordinador.
+        return redirect()->route('coordinator.coordinate')->with('success', 'Developer registered successfully!');
     }
 
     /**
-     * Display the specified developer.
+     * Display a listing of the developers.
      */
-    public function show(Desarrollador $desarrollador)
+    public function index(): Response
     {
-        // Eager load the 'trabajador' relationship for the show view
-        $desarrollador->load('trabajador');
-        return view('Developer.Show', compact('desarrollador'));
+        $developers = User::where('role', 'developer')
+            ->select('id', 'name', 'lastname', 'email', 'specialty', 'worker_type', 'is_active', 'profile_photo_path') // Select necessary fields
+            ->orderBy('name')
+            ->paginate(10); // Or use get() if you don't need pagination
+
+        // If 'Coordinator/Developers/Index' does not exist and you want to render
+        // the main coordinator dashboard, change the view path here.
+        return Inertia::render('Coordinator/coordinate', [
+            'developers' => $developers,
+        ]);
     }
+
+
 
     /**
      * Show the form for editing the specified developer.
      */
-    public function edit(Desarrollador $desarrollador)
+    public function edit(User $developer): Response
     {
-        // When editing, the current trabajador for this developer should always be available.
-        // Other trabajadores available for assignment should be those not already assigned to another specialized role,
-        // excluding the current trabajador associated with this developer.
-        $trabajadores = Trabajador::whereDoesntHave('desarrollador')
-                                ->whereDoesntHave('coordinadorProyecto')
-                                ->whereDoesntHave('liderProyecto')
-                                ->orWhere('id_trabajador', $desarrollador->id_trabajador) // Include the current associated trabajador
-                                ->get();
+        // Ensure the user being edited is indeed a developer
+        if ($developer->role !== 'developer') {
+            abort(404); // Or redirect with an error
+        }
 
-        return view('Developer.Edit', compact('desarrollador', 'trabajadores'));
+        return Inertia::render('Coordinator/Developers/Edit', [
+            'developer' => $developer->only(
+                'id', 'name', 'lastname', 'email', 'identification_number', 
+                'address', 'profession', 'specialty', 'worker_type', 'profile_photo_path', 'is_active'
+                // Exclude password, date_of_birth
+            ),
+            'specialtyList' => $this->getSpecialtyList(),
+            'workerTypeList' => $this->getWorkerTypeList(),
+        ]);
     }
 
     /**
      * Update the specified developer in storage.
      */
-    public function update(Request $request, Desarrollador $desarrollador)
+    public function update(Request $request, User $developer): \Illuminate\Http\RedirectResponse
     {
-        $request->validate([
-            'id_trabajador' => [
-                'required',
-                'exists:trabajadores,id_trabajador',
-                Rule::unique('desarrolladores', 'id_trabajador')->ignore($desarrollador->id_desarrollador, 'id_desarrollador'),
-                // Ensure the updated trabajador is not already assigned to other specialized roles,
-                // ignoring the current developer's association.
-                Rule::unique('coordinador_proyectos', 'id_trabajador')->ignore($desarrollador->id_trabajador, 'id_trabajador'),
-                Rule::unique('lider_proyectos', 'id_trabajador')->ignore($desarrollador->id_trabajador, 'id_trabajador'),
-            ],
-            'especialidad_desarrollo' => ['nullable', 'string', 'max:255'],
+        // Ensure the user being edited is indeed a developer
+        if ($developer->role !== 'developer') {
+            abort(403, 'Cannot update this user type.');
+        }
+
+        $validatedData = $request->validate([
+            'name' => 'required|string|max:255',
+            'lastname' => 'required|string|max:255',
+            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($developer->id)],
+            // 'date_of_birth' is not updatable as per requirements
+            'identification_number' => ['nullable', 'string', 'max:255', Rule::unique('users', 'identification_number')->ignore($developer->id)],
+            'address' => 'nullable|string|max:1000',
+            'profession' => 'nullable|string|max:255',
+            'specialty' => ['required', 'string', Rule::in($this->getSpecialtyList())],
+            'worker_type' => ['required', 'string', Rule::in($this->getWorkerTypeList())],
+            'profile_photo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048', // 2MB Max
+            'is_active' => 'required|boolean', // Allow updating active status
         ]);
 
-        $desarrollador->update($request->all());
+        if ($request->hasFile('profile_photo')) {
+            // Delete old photo if it exists
+            if ($developer->profile_photo_path) {
+                Storage::disk('public')->delete($developer->profile_photo_path);
+            }
+            $validatedData['profile_photo_path'] = $request->file('profile_photo')->store('profile-photos', 'public');
+        }
 
-        return redirect()->route('Developer.Develop')->with('success', 'Desarrollador updated successfully.');
+        // Remove profile_photo from validatedData as it's not a column in the users table
+        unset($validatedData['profile_photo']);
+
+        $developer->update($validatedData);
+
+        // Redirect to a developer listing page or the coordinator dashboard
+        // For now, redirecting to coordinator dashboard.
+        // Consider creating a route like 'coordinator.developers.index' in the future.
+        return redirect()->route('coordinator.coordinate')->with('success', 'Developer profile updated successfully!');
     }
 
-    /**
-     * Remove the specified developer from storage.
-     */
-    public function destroy(Desarrollador $desarrollador)
+    private function getSpecialtyList(): array
     {
-        $desarrollador->delete();
-        return redirect()->route('Developer.Develop')->with('success', 'Desarrollador deleted successfully.');
+        return ['Backend', 'Frontend', 'DevOps', 'Mobile', 'Fullstack', 'Data Science', 'QA Engineer', 'UX/UI Designer'];
+    }
+
+    private function getWorkerTypeList(): array
+    {
+        return ['Full-time', 'Part-time', 'Contractor', 'Intern'];
     }
 }

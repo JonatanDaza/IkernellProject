@@ -13,7 +13,7 @@ class Trabajador extends Model
     public $incrementing = true; // Indicates if the primary key is auto-incrementing
 
     protected $fillable = [
-        'id', // This refers to the foreign key from the 'users' table
+        'user_id', // Assuming this is the foreign key to the users table
         'identificacion',
         'fecha_nacimiento',
         'direccion',
@@ -30,7 +30,7 @@ class Trabajador extends Model
     public function user()
     {
         // Changed "Usuario" to "User" to match Laravel's default User model
-        return $this->belongsTo(User::class, 'id'); // 'id' is the foreign key in Trabajador table, referring to 'id' in User table
+        return $this->belongsTo(User::class, 'user_id'); // Ensure 'user_id' is the correct foreign key
     }
 
     public function desarrollador()

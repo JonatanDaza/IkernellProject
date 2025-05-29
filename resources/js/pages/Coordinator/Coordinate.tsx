@@ -1,6 +1,7 @@
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
-import { Head, router } from '@inertiajs/react';
+import { type BreadcrumbItem, type User as GlobalUser, type PaginatedData } from '@/types'; // Import GlobalUser and PaginatedData
+import { Head, router, Link } from '@inertiajs/react'; // Import Link
+import { Button } from '@/components/ui/button'; // Import Button component
 import React, { useState, type FormEvent, useEffect, useMemo } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -11,13 +12,14 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 // Define types for data coming from the backend
-interface User {
+interface ProjectUser { // Renamed to avoid conflict with global User, specific to project context
     id: number;
     name: string;
+    lastname?: string | null;
     email: string;
     specialty: string | null;
     role: string; // User's global role
-    // Data from the pivot table
+    // Data from the project_user pivot table
     pivot: {
         project_id: number;
         user_id: number;
@@ -29,20 +31,22 @@ interface Project {
     id: number;
     name: string;
     description: string | null;
-    users: User[]; // Users assigned to this project
+    users: ProjectUser[]; // Users assigned to this project
 }
 
 // Props that the component expects from Laravel/Inertia
 interface CoordinateProps {
     initialProjects: Project[];
     specialtiesList: string[]; // List of unique specialties for filtering
-    assignableUsersList: Omit<User, 'pivot'>[]; // Users available for linking (don't have pivot data here)
+    assignableUsersList: Omit<GlobalUser, 'role' | 'email_verified_at' | 'created_at' | 'updated_at' | 'two_factor_secret' | 'two_factor_recovery_codes' | 'two_factor_confirmed_at' | 'pivot'>[]; // Users available for linking
+    developers?: PaginatedData<GlobalUser>; // Optional: For listing developers passed from DesarrolladorController@index
 }
 
 export default function Coordinate({
     initialProjects = [],
     specialtiesList = [],
     assignableUsersList = [],
+    developers: developersData, // Renamed to avoid conflict with local 'developers' state if any
 }: CoordinateProps) {
     // State to manage which user is selected for linking to which project
     // Key: project.id, Value: user.id to link (or '' if none selected)
@@ -85,6 +89,7 @@ export default function Coordinate({
                 const matchesSearch =
                     !searchTerm || // if no search term, always true
                     (user.name && user.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                    (user.lastname && typeof user.lastname === 'string' && user.lastname.toLowerCase().includes(searchTerm.toLowerCase())) || // Check type before calling toLowerCase
                     (user.email && user.email.toLowerCase().includes(searchTerm.toLowerCase()));
 
                 const matchesStatus =
@@ -255,6 +260,18 @@ export default function Coordinate({
                         )}
 
                 {/* Project Sections */}
+                {/* Section to display developers if passed */}
+                <div>
+                    <div className="flex justify-between items-center">
+                        <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
+                            Registered Developers
+                        </h1>
+                        <Link href={route('coordinator.developers.create')}>
+                            <Button>Create Developer</Button> 
+                            {/* Consider using a variant if available, e.g., <Button variant="default"> or <Button variant="primary"> */}
+                        </Link>
+                    </div>
+                </div>
                 <div className="grid auto-rows-min gap-6 md:grid-cols-1"> {/* Projects stack vertically */}
                     {filteredProjects.length === 0 ? (
                          <div className="bg-white dark:bg-gray-800 shadow-md rounded-xl border border-sidebar-border/70 dark:border-sidebar-border p-6 text-center text-gray-500 dark:text-gray-400">
@@ -312,7 +329,7 @@ export default function Coordinate({
                                             ) : (
                                                 project.users.map(user => (
                                                     <tr key={user.id} className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-                                                        <td className="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap">{user.name}</td>
+                                                        <td className="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap">{`${user.name}${user.lastname ? ' ' + user.lastname : ''}`}</td>
                                                         <td className="px-6 py-4">{user.email}</td>
                                                         <td className="px-6 py-4 capitalize">{user.specialty || 'N/A'}</td>
                                                         <td className="px-6 py-4 capitalize">{user.role}</td>
@@ -329,14 +346,14 @@ export default function Coordinate({
                                                             {user.pivot.is_active_in_project ? (
                                                                 <button
                                                                     onClick={() => handleToggleUserProjectStatus(project.id, user.id, false)}
-                                                                    className="px-2 py-1 text-xs bg-yellow-500 hover:bg-yellow-600 text-white rounded"
+                                                                    className="px-2 py-1 text-xs text-white rounded bg-red-100 text-red-800 dark:bg-red-700 dark:text-red-100"
                                                                 >
                                                                     Deactivate
                                                                 </button>
                                                             ) : (
                                                                 <button
                                                                     onClick={() => handleToggleUserProjectStatus(project.id, user.id, true)}
-                                                                    className="px-2 py-1 text-xs bg-blue-500 hover:bg-blue-600 text-white rounded"
+                                                                    className="px-2 py-1 text-xs text-white rounded bg-green-100 text-green-800 dark:bg-green-700 dark:text-green-100"
                                                                 >
                                                                     Activate
                                                                 </button>
@@ -347,6 +364,11 @@ export default function Coordinate({
                                                             >
                                                                 Unlink
                                                             </button>
+                                                            <Link href={route('coordinator.developers.edit', { developer: user.id })}>
+                                                                <button className="px-2 py-1 text-xs bg-indigo-500 hover:bg-indigo-600 text-white rounded">
+                                                                    Edit Developer
+                                                                </button>
+                                                            </Link>
                                                         </td>
                                                     </tr>
                                                 ))
