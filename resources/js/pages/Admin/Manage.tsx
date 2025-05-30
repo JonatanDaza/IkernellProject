@@ -13,7 +13,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 // Define Role type first
 // Updated Role type based on new roles
-type Role = 'developer' | 'admin' | 'leader' | 'coordinator' | 'interested';
+type Role = 'developer' | 'admin' | 'superadmin' | 'leader' | 'coordinator' | 'interested';
 // Tipos para los datos de usuario (simulados)
 interface User {
     id: number;
@@ -36,6 +36,7 @@ export default function Dashboard({
     const [users, setUsers] = useState<User[]>(initialUsers);
     const [searchTerm, setSearchTerm] = useState('');
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     const handleSearch = (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -61,7 +62,9 @@ export default function Dashboard({
         console.log(`Cambiar rol para usuario ${userId} a ${newRole}`);
         // Optimistic UI update
         setUsers(prevUsers => prevUsers.map(user => user.id === userId ? { ...user, role: newRole } : user));
+        setErrorMessage(null); // Clear previous error messages
         setSuccessMessage(`Rol del usuario ${userId} cambiado a ${newRole}.`);
+        // Clear success message after 3 seconds, error message will clear it if error occurs
         setTimeout(() => setSuccessMessage(null), 3000);
 
         // Llamada API para persistir el cambio en el backend.
@@ -77,8 +80,10 @@ export default function Dashboard({
             onError: (errors) => {
                 console.error('Error al cambiar el rol:', errors);
                 // Opcional: Revertir el cambio en la UI si la API falla y mostrar mensaje de error
-                setUsers(initialUsers); // Revierte al estado original de las props
-                setSuccessMessage('Error al cambiar el rol. Por favor, inténtelo de nuevo.');
+                setUsers(initialUsers); // Revierte al estado original de las props (last known good state from server)
+                setSuccessMessage(null); // Clear optimistic success message
+                setErrorMessage('Error al cambiar el rol. Por favor, inténtelo de nuevo.');
+                setTimeout(() => setErrorMessage(null), 3000); // Optionally hide error message after a delay
              },
         });
     };
@@ -87,6 +92,7 @@ export default function Dashboard({
         console.log(`${isActive ? 'Activar' : 'Desactivar'} usuario ${userId}`);
         // Optimistic UI update
         setUsers(prevUsers => prevUsers.map(user => user.id === userId ? { ...user, is_active: isActive } : user));
+        setErrorMessage(null); // Clear previous error messages
         setSuccessMessage(`Usuario ${userId} ${isActive ? 'activado' : 'desactivado'}.`);
         setTimeout(() => setSuccessMessage(null), 3000);
 
@@ -102,8 +108,10 @@ export default function Dashboard({
             onError: (errors) => {
                 console.error('Error al cambiar el estado del usuario:', errors);
                 // Opcional: Revertir el cambio en la UI si la API falla y mostrar mensaje de error
-                setUsers(initialUsers); // Revierte al estado original de las props
-                setSuccessMessage('Error al cambiar el estado del usuario. Por favor, inténtelo de nuevo.');
+                setUsers(initialUsers); // Revierte al estado original de las props (last known good state from server)
+                setSuccessMessage(null); // Clear optimistic success message
+                setErrorMessage('Error al cambiar el estado del usuario. Por favor, inténtelo de nuevo.');
+                setTimeout(() => setErrorMessage(null), 3000); // Optionally hide error message after a delay
             },
         });
     };
@@ -124,6 +132,12 @@ export default function Dashboard({
                         {successMessage && (
                             <div className="m-4 p-3 bg-green-100 dark:bg-green-700 border border-green-400 dark:border-green-600 text-green-700 dark:text-green-100 rounded-md">
                                 <p>{successMessage}</p>
+                            </div>
+                        )}
+
+                        {errorMessage && (
+                            <div className="m-4 p-3 bg-red-100 dark:bg-red-700 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-100 rounded-md">
+                                <p>{errorMessage}</p>
                             </div>
                         )}
 
@@ -223,9 +237,6 @@ export default function Dashboard({
                             </div>
                         </div>
                     </div>
-                </div>
-                <div className="border-sidebar-border/70 dark:border-sidebar-border relative min-h-[100vh] flex-1 overflow-hidden rounded-xl border md:min-h-min">
-                    <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
                 </div>
             </div>
         </AppLayout>

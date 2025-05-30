@@ -17,7 +17,7 @@ class UserManagementController extends Controller
     public function managePage(): Response
     {
         // Define all roles that can be managed or assigned
-        $manageableRoles = ['developer', 'admin', 'leader', 'coordinator', 'interested'];
+        $manageableRoles = ['developer', 'admin', 'superadmin', 'leader', 'coordinator', 'interested'];
 
         $users = User::select('id', 'name', 'email', 'role', 'is_active')
             ->whereIn('role', $manageableRoles) // Filter for manageable roles, now including 'interested'
@@ -45,7 +45,7 @@ class UserManagementController extends Controller
         $validated = $request->validate([
             'role' => [
                 'required',
-                Rule::in(['developer', 'admin', 'leader', 'coordinator', 'interested']), // Add 'interested' to validation
+                Rule::in(['developer', 'admin', 'superadmin', 'leader', 'coordinator', 'interested']), // Add 'interested' to validation
             ],
         ]);
 

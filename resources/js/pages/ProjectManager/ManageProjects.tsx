@@ -13,23 +13,29 @@ interface SimpleUser { // Para la lista de líderes
     lastname?: string | null; // Asumiendo que el apellido puede venir
 }
 type ProjectStatus = 'active' | 'inactive' | 'finished';
+type ProjectStage = 'Pendiente' | 'Inicio' | 'Planeacion' | 'Ejecucion' | 'Seguimiento' | 'Cierre';
 
 interface Project {
     id: number;
     name: string;
     description: string | null;
     status: ProjectStatus | string; // More specific status, fallback to string
+    stage: ProjectStage | string; // Etapa del proyecto
     start_date: string | null; // YYYY-MM-DD
     end_date: string | null;   // YYYY-MM-DD
     leader_id: number | null;
     leader?: SimpleUser | null; // Detalles del líder (opcional, si se carga con eager loading)
+    // Campos que venían en el snippet de 'activity' y que podrían ser útiles para 'project'
+    // completed_at_formatted?: string | null; // Example if you add more formatted fields
+    // time_spent_formatted?: string | null;   // Example
 }
 
 // Props que el componente espera de Laravel/Inertia
 interface ManageProjectsProps {
     initialProjects: Project[];
     potentialLeaders: SimpleUser[]; // Lista de usuarios que son líderes
-    projectStatusList: ProjectStatus[]; 
+    projectStatusList: ProjectStatus[];
+    projectStageList: ProjectStage[]; // Lista de etapas disponibles
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -42,6 +48,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 export default function ManageProjects({
     initialProjects = [],
     potentialLeaders = [],
+    projectStageList = ['Pendiente', 'Inicio', 'Planeacion', 'Ejecucion', 'Seguimiento', 'Cierre'] as ProjectStage[],
     projectStatusList = ['active', 'inactive', 'finished'] as ProjectStatus[], // Ensure default matches the type
 }: ManageProjectsProps) {
     const [projects, setProjects] = useState<Project[]>(initialProjects);
@@ -55,6 +62,29 @@ export default function ManageProjects({
     useEffect(() => {
         setProjects(Array.isArray(initialProjects) ? initialProjects : []);
     }, [initialProjects]);
+
+    // Efecto para la lógica de cambio automático de etapa a "Inicio"
+    useEffect(() => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Normalizar para comparar solo la fecha
+
+        projects.forEach(project => {
+            if (project.stage === 'Pendiente' && project.start_date) {
+                const projectStartDate = new Date(project.start_date);
+                projectStartDate.setHours(0, 0, 0, 0); // Normalizar para comparar solo la fecha
+
+                if (projectStartDate <= today) {
+                    // console.log(`Proyecto ${project.name} (ID: ${project.id}) debería pasar a etapa 'Inicio'.`);
+                    // Para que este cambio sea efectivo y persistente, se debería llamar a una función
+                    // que actualice el backend, similar a handleSetProjectStage.
+                    // Ejemplo: handleSetProjectStage(project.id, 'Inicio', true); // true para indicar que es un cambio automático
+                    // Cuidado con bucles infinitos si handleSetProjectStage modifica 'projects' y este efecto se vuelve a disparar.
+                    // La gestión de cambios automáticos de estado/etapa es a menudo mejor manejada
+                    // por el backend (ej. con tareas programadas o lógica al recuperar los datos).
+                }
+            }
+        });
+    }, [projects]); // Considerar dependencias adicionales si se llama a handleSetProjectStage
 
     // Effect for success message timeout
     useEffect(() => {
@@ -106,10 +136,13 @@ export default function ManageProjects({
     const handleSetProjectStatus = (projectId: number, currentStatus: Project['status']) => {
         const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
         if (!confirm(`Are you sure you want to set project ${projectId} to "${newStatus}"?`)) {
+        // if (!confirm(`¿Está seguro de que desea cambiar el estado del proyecto ${projectId} a "${newStatus}"?`)) {
             return;
         }
 
-        router.put(route('project-manager.projects.update-status', projectId),
+        // Asegúrate que la ruta 'project-manager.projects.update-status' esté definida correctamente
+        // y que el controlador maneje la actualización y la sincronización con la etapa.
+        router.put(route('project-manager.projects.update-status', projectId), 
             { status: newStatus },
             {
                 preserveScroll: true,
@@ -130,7 +163,49 @@ export default function ManageProjects({
         );
     };
 
+    const handleSetProjectStage = (projectId: number, newStage: ProjectStage) => {
+        const projectToUpdate = projects.find(p => p.id === projectId);
+        if (!projectToUpdate) {
+            console.error(`Project with ID ${projectId} not found.`);
+            return;
+        }
 
+        // Evitar la confirmación si es un cambio automático (ejemplo)
+        // if (!isAutomaticChange && !confirm(`Are you sure you want to set project ${projectToUpdate.name} to stage "${newStage}"?`)) {
+        if (!confirm(`¿Está seguro de que desea cambiar la etapa del proyecto "${projectToUpdate.name}" a "${newStage}"?`)) {
+            return;
+        }
+
+        router.put(route('project-manager.projects.update-stage', projectId), // Asegúrate que esta ruta exista en web.php y tu controlador
+            { stage: newStage },
+            {
+                preserveScroll: true,
+                onSuccess: (page) => { // El objeto 'page' contiene las nuevas props
+                    setSuccessMessage(`Etapa del proyecto actualizada a "${newStage}".`);
+                    // **MÉTODO PREFERIDO CON INERTIA:**
+                    // El backend debería responder con una redirección (ej. redirect()->back()).
+                    // Esto hará que Inertia solicite las props actualizadas para la página.
+                    // El useEffect que observa 'initialProjects' se disparará y actualizará
+                    // el estado local 'projects', reflejando el cambio.
+
+                    // **SOLUCIÓN ALTERNATIVA (si el backend no refresca props correctamente):**
+                    // Actualizar manualmente el estado local. Esto es menos ideal porque puede
+                    // desincronizarse con el estado real del servidor si algo sale mal.
+                    // Úsalo con precaución y como medida temporal.
+                    // setProjects(prevProjects =>
+                    //     prevProjects.map(p =>
+                    //         p.id === projectId ? { ...p, stage: newStage, status: newStage === 'Cierre' ? 'inactive' : p.status } : p
+                    //     )
+                    // );
+                },
+                onError: (errors) => {
+                    console.error('Error actualizando la etapa del proyecto:', errors);
+                    const messages = Object.values(errors).flat().join(' ');
+                    setSuccessMessage(`Error: ${messages || 'No se pudo actualizar la etapa del proyecto.'}`);
+                }
+            }
+        );
+    };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -203,12 +278,36 @@ export default function ManageProjects({
                     {filteredProjects.length > 0 ? (
                         filteredProjects.map((project) => (
                             <div key={project.id} className="bg-white dark:bg-gray-800 shadow-lg rounded-xl p-6 border border-sidebar-border/70 dark:border-sidebar-border flex flex-col justify-between">
-                                <div>
-                                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">{project.name}</h3>
+                                <div className="flex-1 min-w-0"> {/* Flex container for content */}
+                                    <div className="mb-3"> {/* Section for project name and stage */}
+                                        <h3 className="text-xl font-semibold text-indigo-600 dark:text-indigo-400 truncate">
+                                            {project.name}
+                                        </h3>
+                                        <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                                            <span className="font-medium">Etapa:</span> {project.stage || 'No definida'}
+                                        </p>
+                                    </div>
+
                                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-1 h-20 overflow-y-auto">{project.description || 'No description.'}</p>
                                     <p className="text-xs text-gray-500 dark:text-gray-300">Status: <span className="font-medium capitalize">{project.status}</span></p>
                                     <p className="text-xs text-gray-500 dark:text-gray-300">Leader: {project.leader ? `${project.leader.name} ${project.leader.lastname || ''}` : 'N/A'}</p>
-                                    <p className="text-xs text-gray-500 dark:text-gray-300">Dates: {project.start_date || 'N/A'} to {project.end_date || 'N/A'}</p>
+                                    
+                                    {project.end_date && ( // Equivalente a due_date para proyectos
+                                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                            Fecha Límite: {new Date(project.end_date).toLocaleDateString()}
+                                        </p>
+                                    )}
+                                    {project.start_date && ( // Equivalente a started_at_formatted para proyectos
+                                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                            Iniciado: {new Date(project.start_date).toLocaleDateString()}
+                                        </p>
+                                    )}
+                                    {project.status === 'finished' && project.end_date && (
+                                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                            Completado: {new Date(project.end_date).toLocaleDateString()}
+                                        </p>
+                                    )}
+                                    {/* Los campos como time_spent_formatted y developer_notes no están en la interfaz Project */}
                                 </div>
                                 <div className="mt-4 flex justify-end flex-wrap gap-2"> {/* Added flex-wrap and changed space-x-2 to gap-2 */}
                                     {project.status !== 'finished' && (
@@ -220,6 +319,22 @@ export default function ManageProjects({
                                         >
                                             {project.status === 'active' ? 'Set Inactive' : 'Set Active'}
                                         </Button>
+                                    )}
+                                    {/* Selector para cambiar la etapa del proyecto */}
+                                    {project.status !== 'finished' && (
+                                        <select
+                                            value={project.stage || ''} // Usar '' como fallback si stage es undefined/null
+                                            onChange={(e) => handleSetProjectStage(project.id, e.target.value as ProjectStage)}
+                                            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 h-[36px] min-w-[120px]" // Ajustar altura y añadir min-width
+                                            title="Cambiar etapa del proyecto"
+                                        >
+                                            {/* <option value="" disabled>Seleccionar etapa...</option> */}
+                                            {(Array.isArray(projectStageList) ? projectStageList : []).map(stage => (
+                                                <option key={stage} value={stage}>
+                                                    {stage}
+                                                </option>
+                                            ))}
+                                        </select>
                                     )}
                                     <Link href={route('project-manager.projects.team.manage', project.id)}>
                                         <Button variant="outline" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md shadow-sm disabled:opacity-50" size="sm">Manage Team</Button>

@@ -19,7 +19,8 @@ class UserController extends Controller
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'lastname' => ['nullable', 'string', 'max:255'],
-            'role' => ['nullable', Rule::in(['interested', 'admin', 'coordinator', 'leader', 'developer'])], // Validation for enum
+            'role' => ['nullable', Rule::in(['interested', 'admin', 'superadmin', 'coordinator', 'leader', 'developer'])], // Validation for enum
+            'identification_number' => ['nullable', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'fecha_registro' => ['nullable', 'date'],
@@ -47,7 +48,8 @@ class UserController extends Controller
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'lastname' => ['nullable', 'string', 'max:255'],
-            'role' => ['nullable', Rule::in(['interested', 'admin', 'coordinator', 'leader', 'developer'])], // Validation for enum
+            'role' => ['nullable', Rule::in(['interested', 'admin', 'superadmin', 'coordinator', 'leader', 'developer'])], // Validation for enum
+            'identification_number' => ['nullable', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
             'fecha_registro' => ['nullable', 'date'],
@@ -59,6 +61,7 @@ class UserController extends Controller
             'lastname' => $request->lastname,
             'role' => $request->role ?? 'interested', // Use null coalescing to default if not provided
             'email' => $request->email,
+            'identification_number' => $request->identification_number,
             'password' => $request->password ? Hash::make($request->password) : $user->password,
             'fecha_registro' => $request->fecha_registro,
             'tipo_usuario' => $request->tipo_usuario,

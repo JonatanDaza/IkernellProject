@@ -16,13 +16,19 @@ class ProjectManagementController extends Controller
     /**
      * Show the project management page for Project Managers (leaders).
       */
+    // Define allowed project statuses if not already globally available
+    protected $projectStatuses = ['active', 'inactive', 'finished'];
+
     public function manageProjectsPage(): Response
     {
         // Fetch projects, eager load leader details
         $projects = Project::with('leader:id,name,lastname') // Eager load leader details including lastname
-        ->select('id', 'name', 'description', 'status', 'start_date', 'end_date', 'leader_id') // Select specific project fields
+        ->select('id', 'name', 'description', 'status', 'stage', 'start_date', 'end_date', 'leader_id') // Added 'stage'
         ->orderBy('name') // Order projects by name
-        ->get();
+        ->get()->map(function ($project) {
+            $project->stage = $project->stage ?: Project::STAGE_PENDIENTE; // Ensure stage has a default
+            return $project;
+        });
 
         // Fetch users who can be assigned.
         // Fetch users who are leaders to populate the leader filter dropdown
@@ -32,13 +38,12 @@ class ProjectManagementController extends Controller
 
         // Define the list of possible project statuses
         // This could also come from a config file or a dedicated table if statuses are dynamic
-        $projectStatusList = ['active', 'inactive', 'finished'];
-
 
         return Inertia::render('ProjectManager/ManageProjects', [
             'initialProjects' => $projects,
             'potentialLeaders' => $potentialLeaders,
-            'projectStatusList' => $projectStatusList,
+            'projectStatusList' => $this->projectStatuses,
+            'projectStageList' => Project::getStages(), // Pass the list of stages
         ]);
     }
 
@@ -55,9 +60,9 @@ class ProjectManagementController extends Controller
 
          return Inertia::render('ProjectManager/CreateProject', [
              'potentialLeaders' => $potentialLeaders,
+            'projectStatusList' => $this->projectStatuses,
+            'projectStageList' => Project::getStages(),
              'currentUserId' => Auth::id(), // Pass current user's ID to pre-select if desired
-
-
         ]);
     }
 
@@ -72,10 +77,21 @@ class ProjectManagementController extends Controller
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'leader_id' => 'nullable|exists:users,id',
+            // Add validation for status and stage if they are part of the creation form
+            'status' => ['sometimes', 'required', Rule::in($this->projectStatuses)],
+            'stage' => ['sometimes', 'required', Rule::in(Project::getStages())],
         ]);
 
-        $project = Project::create($validatedData);
+        // Set default status and stage if not provided
+        $validatedData['status'] = $validatedData['status'] ?? 'active';
+        $validatedData['stage'] = $validatedData['stage'] ?? Project::STAGE_PENDIENTE;
 
+        // Sync stage if status is inactive
+        if ($validatedData['status'] === 'inactive') {
+            $validatedData['stage'] = Project::STAGE_CIERRE;
+        }
+
+        $project = Project::create($validatedData);
         return redirect()->route('project-manager.projects.manage')->with('success', 'Project created successfully.');
     }
 
@@ -89,15 +105,14 @@ class ProjectManagementController extends Controller
                                 ->orderBy('name')
                                 ->get();
 
-        $projectStatusList = ['active', 'inactive', 'finished']; // Consistent with manageProjectsPage
-
         // Load the leader relationship if it's not already loaded
         $project->loadMissing('leader');
 
         return Inertia::render('ProjectManager/EditProject', [
             'project' => $project,
             'potentialLeaders' => $potentialLeaders,
-            'projectStatusList' => $projectStatusList,
+            'projectStatusList' => $this->projectStatuses,
+            'projectStageList' => Project::getStages(),
             'currentUserId' => Auth::id(),
         ]);
     }
@@ -114,11 +129,29 @@ class ProjectManagementController extends Controller
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'leader_id' => 'nullable|exists:users,id',
+            'stage' => ['required', Rule::in(Project::getStages())], // Add stage validation
         ]);
+
+        // Sync logic for status and stage
+        $newStatus = $validatedData['status'];
+        $newStage = $validatedData['stage'];
+
+        if ($newStatus === 'inactive' && $newStage !== Project::STAGE_CIERRE) {
+            $validatedData['stage'] = Project::STAGE_CIERRE;
+        } elseif ($newStatus === 'active' && $newStage === Project::STAGE_CIERRE) {
+            $validatedData['stage'] = Project::STAGE_SEGUIMIENTO; // Or another appropriate active stage
+        }
+
+        if ($newStage === Project::STAGE_CIERRE && $newStatus !== 'finished' && $newStatus !== 'inactive') {
+            $validatedData['status'] = 'inactive';
+        } elseif ($newStage !== Project::STAGE_CIERRE && $newStatus === 'inactive' && $project->stage === Project::STAGE_CIERRE) {
+            // If moving out of Cierre and status was inactive (due to Cierre), make it active
+            $validatedData['status'] = 'active';
+        }
 
         $project->update($validatedData);
 
-        return redirect()->route('project-manager.projects.manage')->with('success', 'Project updated successfully.');
+        return redirect()->route('project-manager.projects.manage')->with('successMessage', 'Project updated successfully.');
     }
 
     /**
@@ -128,18 +161,63 @@ class ProjectManagementController extends Controller
     {
         $validated = $request->validate([
             // Allow 'active', 'inactive'. 'finished' might be set via a different process or edit form.
-            'status' => ['required', Rule::in(['active', 'inactive'])],
+            'status' => ['required', Rule::in(['active', 'inactive', 'finished'])], // Allow finished as well if button can set it
         ]);
 
+        $newStatus = $validated['status'];
+
         // Prevent changing status if project is already 'finished' via this simple toggle
-        if ($project->status === 'finished' && in_array($validated['status'], ['active', 'inactive'])) {
-            return redirect()->back()->with('error', 'Cannot change status of a finished project via this action.');
+        // Allow changing from 'finished' to 'active' or 'inactive' if needed by business logic
+        // if ($project->status === 'finished' && in_array($newStatus, ['active', 'inactive'])) {
+        //     return redirect()->back()->with('error', 'Cannot change status of a finished project via this action.');
+        // }
+
+        $project->status = $newStatus;
+
+        // Sync stage with status
+        if ($newStatus === 'inactive') {
+            $project->stage = Project::STAGE_CIERRE;
+        } elseif ($newStatus === 'active') {
+            if ($project->stage === Project::STAGE_CIERRE) { // If it was 'Cierre' and now 'active'
+                $project->stage = Project::STAGE_SEGUIMIENTO; // Or another default active stage
+            }
+        } elseif ($newStatus === 'finished') {
+            $project->stage = Project::STAGE_CIERRE;
         }
 
-        $project->status = $validated['status'];
         $project->save();
 
-        return redirect()->route('project-manager.projects.manage')->with('success', 'Project status updated successfully.');
+        return redirect()->route('project-manager.projects.manage')->with('successMessage', 'Project status and stage updated successfully.');
+    }
+
+    /**
+     * Update the stage of the specified project.
+     */
+    public function updateProjectStage(Request $request, Project $project): \Illuminate\Http\RedirectResponse
+    {
+        $validated = $request->validate([
+            'stage' => ['required', Rule::in(Project::getStages())],
+        ]);
+
+        if ($project->status === 'finished') {
+            return redirect()->back()->with('error', 'Cannot change status of a finished project via this action.');
+        }
+        $newStage = $validated['stage'];
+        $project->stage = $newStage;
+
+        // Sync status with stage
+        if ($newStage === Project::STAGE_CIERRE) {
+            if ($project->status !== 'finished') { // Don't change status if already 'finished'
+                 $project->status = 'inactive';
+            }
+        } elseif ($project->status === 'inactive' && $project->status !== 'finished') {
+            // If moving out of 'Cierre' stage and project was 'inactive' (and not 'finished')
+            // set it back to 'active'.
+            $project->status = 'active';
+        }
+
+        $project->save();
+        return redirect()->route('project-manager.projects.manage')->with('successMessage', 'Project stage and status updated successfully.');
     }
 
     /**

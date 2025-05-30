@@ -25,6 +25,13 @@ const adminNavItems: NavItem[] = [
         icon: LayoutGrid,
     },
 ];
+const superAdminNavItems: NavItem[] = [
+    {
+        title: 'SuperAdmin',
+        href: '/superadmin/remanage',
+        icon: LayoutGrid,
+    },
+];
 const coordinatorNavItems: NavItem[] = [
     {
         title: 'Coordinator',
@@ -41,12 +48,18 @@ const leaderNavItems: NavItem[] = [
 ];
 const developerNavItems: NavItem[] = [
     {
-        title: 'Developer',
-        href: '/developer/develop',
+        title: 'My Activities',
+        href: '/developer/my-activities',
         icon: LayoutGrid,
     },
 ];
 let roleBasedNavItems = [...mainNavItems];
+if (userRole === 'superadmin') 
+{
+    roleBasedNavItems = [...roleBasedNavItems,...adminNavItems,...coordinatorNavItems,...leaderNavItems,...developerNavItems//,...superAdminNavItems
+
+    ];
+}
 if (userRole === 'admin') 
 {
     roleBasedNavItems = [...roleBasedNavItems,...adminNavItems];

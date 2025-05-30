@@ -3,20 +3,42 @@
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\UserManagementController;
-use App\Http\Controllers\ProjectManagementController; // Ensure this is the correct one for leaders
+use App\Http\Controllers\ProjectManagementController;
 use App\Http\Controllers\DesarrolladorController; // Added for developer creation by coordinator
 use App\Http\Controllers\TestController;
 use App\Http\Controllers\Coordinator\ProjectManagementController as CoordinatorProjectManagementController; // Aliased import
+use App\Http\Controllers\ContactController; // Importar el nuevo controlador
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log; // Import the Log facade
 
 
 Route::get('/', function () {
     return Inertia::render('welcome');
 })->name('home');
 
+Route::post('/contact/send', [ContactController::class, 'send'])->name('contact.send');
+
+Route::get('/test-email', function () {
+    try {
+        Mail::raw('This is a test email body.', function ($message) {
+            $message->to('ikernell.suport@gmail.com') // Asegúrate que este es el correo donde quieres recibir la prueba
+                    ->subject('Test Email from Laravel');
+        });
+        return "Test email sent (check Mailtrap or your inbox)!";
+    } catch (\Exception $e) {
+        Log::error("Test email error: " . $e->getMessage());
+        return "Error sending test email: " . $e->getMessage();
+    }
+});
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
+});
+
+Route::middleware(['auth', 'verified', 'role:superadmin'])->group(function () {
+    Route::get('/superadmin/remanage', [TestController::class,'superadmin'])->name('superadmin');
 });
 
 Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
@@ -28,6 +50,17 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
 
 Route::middleware(['auth', 'verified', 'role:developer'])->group(function () {
     Route::get('/developer/develop', [TestController::class,'developer'])->name('developer');
+
+    // Ruta para mostrar el formulario de creación (ya existente)
+    Route::get('/developer/activities/create', [DesarrolladorController::class, 'createActivity'])->name('developer.create');
+
+    // ¡AÑADE ESTA RUTA PARA SOLUCIONAR EL ERROR!
+    // Esta ruta POST se encargará de recibir los datos del formulario.
+    Route::post('/developer/activities', [DesarrolladorController::class, 'storeActivity'])->name('developer.activities.store');
+
+    Route::get('/developer/my-activities', [DesarrolladorController::class, 'myActivities'])->name('developer.activities');
+    Route::post('/developer/activities/{actividadProyecto}/start', [DesarrolladorController::class, 'startActivity'])->name('developer.activities.start');
+    Route::post('/developer/activities/{actividadProyecto}/complete', [DesarrolladorController::class, 'completeActivity'])->name('developer.activities.complete');
 });
 
 // Coordinator Routes - Using the dedicated CoordinatorProjectManagementController
@@ -60,7 +93,7 @@ Route::middleware(['auth', 'verified', 'role:coordinator'])->prefix('coordinator
 Route::middleware(['auth', 'verified', 'role:leader'])
     ->prefix('project-manager')
     ->name('project-manager.')
-    ->group(function () {
+    ->group(function () { // ProjectManagementController for leaders
         // This is the route that should match 'project-manager.projects.manage'
         Route::get('/projects', [ProjectManagementController::class, 'manageProjectsPage'])
             ->name('projects.manage');
@@ -75,6 +108,8 @@ Route::middleware(['auth', 'verified', 'role:leader'])
             ->name('projects.update');
         Route::put('/projects/{project}/status', [ProjectManagementController::class, 'updateProjectStatus'])
             ->name('projects.update-status');
+        Route::put('/projects/{project}/stage', [ProjectManagementController::class, 'updateProjectStage'])
+            ->name('projects.update-stage'); // Add this route
         Route::get('/projects/{project}/team', [ProjectManagementController::class, 'showProjectTeamForm'])
             ->name('projects.team.manage');
 

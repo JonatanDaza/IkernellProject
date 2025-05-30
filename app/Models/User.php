@@ -26,7 +26,6 @@ class User extends Authenticatable
         'email',
         'password',
         'fecha_registro',
-        // 'tipo_usuario', // Se asume que 'role' es el campo principal para el rol.
         'date_of_birth',
         'identification_number',
         'address',

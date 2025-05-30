@@ -1,16 +1,20 @@
 <?php
 
 namespace App\Http\Controllers;
- 
+
 use App\Models\User;
+use App\Models\ActividadProyecto; // Importar el modelo ActividadProyecto
+use App\Models\Project; // Asegúrate de que el modelo Project está importado
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth; // Importar Auth
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Support\Facades\Storage;
- 
+use Carbon\Carbon; // Importar Carbon
+
 class DesarrolladorController extends Controller
 {
     /**
@@ -21,11 +25,11 @@ class DesarrolladorController extends Controller
         // Estas listas podrían venir de una tabla de configuración o ser hardcodeadas
         $specialtyList = $this->getSpecialtyList();
         $workerTypeList = $this->getWorkerTypeList();
- 
-    return Inertia::render('Coordinator/Developers/Create', [ 
-        'specialtyList' => $specialtyList,
-        'workerTypeList' => $workerTypeList,
-    ]);
+
+        return Inertia::render('Coordinator/Developers/Create', [
+            'specialtyList' => $specialtyList,
+            'workerTypeList' => $workerTypeList,
+        ]);
     }
  
     /**
@@ -164,5 +168,123 @@ class DesarrolladorController extends Controller
     private function getWorkerTypeList(): array
     {
         return ['Full-time', 'Part-time', 'Contractor', 'Intern'];
+    }
+
+    // Métodos para la gestión de actividades DEL PROPIO DESARROLLADOR
+
+    /**
+     * Muestra el formulario para crear una nueva actividad para el desarrollador.
+     *
+     * @return \Inertia\Response
+     */
+    public function createActivity(): Response
+    {
+        // Obtener la lista de proyectos a los que el desarrollador puede asignar actividades.
+        // Incluir el estado del proyecto para que el frontend pueda filtrar.
+        $projects = Project::orderBy('name')->get(['id', 'name', 'status']);
+
+        // Renderiza el componente de Inertia para crear actividades.
+        // Asegúrate de que el nombre del componente ('Developer/CreateActivity')
+        // coincida con la ubicación y nombre de tu archivo .tsx.
+        return Inertia::render('Developer/Create', [
+            'projects' => $projects,
+        ]);
+    }
+
+    /**
+     * Almacena una nueva actividad creada por el desarrollador.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function storeActivity(Request $request): \Illuminate\Http\RedirectResponse
+    {
+        $validatedData = $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string|max:65535', // Aumentado el límite si es necesario
+            'project_id' => [
+                'nullable',
+                Rule::exists('projects', 'id')->where(function ($query) {
+                    $query->where('status', 'active'); // Asegurar que el proyecto esté activo si se selecciona
+                }),
+            ],
+            'due_date' => 'nullable|date',
+            'time_logged_seconds' => 'nullable|integer|min:0',
+        ]);
+
+        $activity = new ActividadProyecto($validatedData);
+        $activity->user_id = Auth::id(); // Asignar al usuario autenticado
+        $activity->status = 'pending'; // Estado por defecto
+        $activity->save();
+
+        return redirect()->route('developer.activities')->with('successMessage', 'Activity created successfully!');
+    }
+
+    public function myActivities(): Response
+    {
+        $developer = Auth::user();
+        $activities = ActividadProyecto::where('user_id', $developer->id)
+            ->with('project') // Asegúrate que la relación 'project' exista en ActividadProyecto
+            // Ajuste para PostgreSQL: Ordenar por un orden específico de 'status'
+            ->orderByRaw(
+                "CASE status " .
+                "WHEN 'in_progress' THEN 1 " .
+                "WHEN 'pending' THEN 2 " .
+                "WHEN 'completed' THEN 3 ELSE 4 END")
+            ->orderBy('due_date', 'asc')
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($activity) {
+                $activity->status_display = match ($activity->status) {
+                    'pending' => 'Pendiente',
+                    'in_progress' => 'En Progreso',
+                    'completed' => 'Completada',
+                    default => ucfirst(str_replace('_', ' ', $activity->status)),
+                };
+                $activity->project_name = $activity->project ? $activity->project->name : 'Proyecto no asignado';
+                // Formatear fechas para la vista si es necesario y si los campos existen
+                $activity->started_at_formatted = $activity->started_at ? Carbon::parse($activity->started_at)->format('d/m/Y H:i') : null;
+                $activity->completed_at_formatted = $activity->completed_at ? Carbon::parse($activity->completed_at)->format('d/m/Y H:i') : null;
+                // Asume que el accesor getFormattedTimeSpentAttribute existe en el modelo ActividadProyecto
+                $activity->time_spent_formatted = $activity->getFormattedTimeSpentAttribute();
+                return $activity;
+            });
+
+        return Inertia::render('Developer/MyActivities', [
+            'activities' => $activities,
+        ]);
+    }
+
+    public function startActivity(Request $request, ActividadProyecto $actividadProyecto): \Illuminate\Http\RedirectResponse
+    {
+        if ($actividadProyecto->user_id !== Auth::id()) {
+            return redirect()->back()->with('error', 'No tienes permiso para modificar esta actividad.');
+        }
+
+        if ($actividadProyecto->status === 'pending') {
+            $actividadProyecto->status = 'in_progress';
+            $actividadProyecto->started_at = Carbon::now();
+            $actividadProyecto->save();
+            return redirect()->back()->with('success', 'Actividad iniciada.');
+        }
+        return redirect()->back()->with('info', 'La actividad ya fue iniciada o completada.');
+    }
+
+    public function completeActivity(Request $request, ActividadProyecto $actividadProyecto): \Illuminate\Http\RedirectResponse
+    {
+        if ($actividadProyecto->user_id !== Auth::id()) {
+            return redirect()->back()->with('error', 'No tienes permiso para modificar esta actividad.');
+        }
+        $request->validate(['developer_notes' => 'nullable|string|max:5000']);
+
+        if ($actividadProyecto->status === 'in_progress' || $actividadProyecto->status === 'pending') {
+            $actividadProyecto->status = 'completed';
+            $actividadProyecto->completed_at = Carbon::now();
+            $actividadProyecto->time_spent_seconds = $actividadProyecto->started_at ? $actividadProyecto->completed_at->diffInSeconds($actividadProyecto->started_at) : 0;
+            $actividadProyecto->developer_notes = $request->input('developer_notes', $actividadProyecto->developer_notes); // Mantener notas existentes si no se envían nuevas
+            $actividadProyecto->save();
+            return redirect()->back()->with('success', 'Actividad completada.');
+        }
+        return redirect()->back()->with('info', 'La actividad ya está completada o no se puede completar desde su estado actual.');
     }
 }
