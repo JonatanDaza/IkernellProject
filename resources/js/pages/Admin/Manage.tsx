@@ -122,7 +122,12 @@ export default function Dashboard({
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
                 <div className="grid auto-rows-min gap-4 md:grid-cols-3">
                     {/* Nueva sección de gestión de usuarios */}
-                    <div className="md:col-span-3 bg-white dark:bg-gray-800 shadow-md rounded-xl border border-sidebar-border/70 dark:border-sidebar-border h-[25vh] overflow-y-auto">
+                        <div className="flex justify-between items-center">
+                            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
+                                Users Man
+                            </h1>
+                        </div>     
+                    <div className="md:col-span-3 bg-white dark:bg-gray-800 shadow-md rounded-xl border border-sidebar-border/70 dark:border-sidebar-border overflow-y-auto">
                         <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
                             <span className="text-lg font-semibold text-gray-700 dark:text-gray-200">
                                 Usuarios

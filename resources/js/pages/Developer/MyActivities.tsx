@@ -142,12 +142,28 @@ export default function MyActivities({ auth, activities, successMessage: initial
             <div className="flex h-full flex-1 flex-col gap-6 p-4 sm:p-6 lg:p-8">
                 <div className="flex justify-between items-center">
                     <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
-                        My Activities
+                        Mis Actividades
                     </h1>
-                    <Link href={route('developer.create')}>
-                        <Button >Create New Activities</Button> 
-                        {/* Consider using a variant if available, e.g., <Button variant="default"> or <Button variant="primary"> */}
-                    </Link>
+                    <div className="flex space-x-3">
+                        <Link href={route('developer.create')}>
+                            {/* Usando un estilo de botón más genérico si Button de headlessui no tiene variantes directas o para consistencia */}
+                            <button className="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-500 active:bg-indigo-700 focus:outline-none focus:border-indigo-700 focus:ring focus:ring-indigo-200 disabled:opacity-25 transition">
+                                Crear Actividades
+                            </button>
+                        </Link>
+                        <Link
+                            href={route('developer.error-reports.create')}
+                            className="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-500 active:bg-red-700 focus:outline-none focus:border-red-700 focus:ring focus:ring-red-200 disabled:opacity-25 transition"
+                        >
+                            Reportar Error
+                        </Link>
+                        <Link
+                            href={route('developer.interruption-reports.create')}
+                            className="inline-flex items-center px-4 py-2 bg-yellow-500 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-yellow-400 active:bg-yellow-600 focus:outline-none focus:border-yellow-600 focus:ring focus:ring-yellow-200 disabled:opacity-25 transition"
+                        >
+                            Registrar Interrupción
+                        </Link>
+                    </div>
                 </div>
                 {successMessage && (
                     <div className={`my-4 p-3 rounded-md border ${successMessage.startsWith('Error:') ? 'bg-red-100 dark:bg-red-700 border-red-400 dark:border-red-600 text-red-700 dark:text-red-100' : 'bg-green-100 dark:bg-green-700 border-green-400 dark:border-green-600 text-green-700 dark:text-green-100'}`}>

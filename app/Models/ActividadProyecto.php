@@ -25,7 +25,9 @@ class ActividadProyecto extends Model
         'completed_at',
         'time_spent_seconds',
         'developer_notes',
-        // 'progress_percentage',
+        'priority', // Nuevo campo
+        'effort_estimation', // Nuevo campo
+    // 'progress_percentage',
     ];
 
     protected $casts = [

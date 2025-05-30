@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\TutorialResource; // Import the TutorialResource model
+use App\Models\ProgramResource; // Import the ProgramResource model
 use App\Models\ActividadProyecto; // Importar el modelo ActividadProyecto
 use App\Models\Project; // Asegúrate de que el modelo Project está importado
 use Illuminate\Http\Request;
@@ -210,6 +212,8 @@ class DesarrolladorController extends Controller
             ],
             'due_date' => 'nullable|date',
             'time_logged_seconds' => 'nullable|integer|min:0',
+            'priority' => ['required', 'string', Rule::in(['low', 'medium', 'high'])],
+            'effort_estimation' => 'nullable|integer|min:0', // Estimación en horas
         ]);
 
         $activity = new ActividadProyecto($validatedData);
@@ -286,5 +290,29 @@ class DesarrolladorController extends Controller
             return redirect()->back()->with('success', 'Actividad completada.');
         }
         return redirect()->back()->with('info', 'La actividad ya está completada o no se puede completar desde su estado actual.');
+    }
+
+    /**
+     * Display the main dashboard, which includes the program library.
+     * This page is accessible to all authenticated users.
+     *
+     * @return \Inertia\Response
+     */
+    public function mainDashboard(): Response // Renamed method for clarity
+    {
+        $programResources = ProgramResource::where('status', 'Aprobado') // Example: only show approved resources
+                                        ->orderBy('type')
+                                        ->orderBy('name')
+                                        ->get();
+
+        $tutorialResources = TutorialResource::where('status', 'Publicado') // Example: only show published tutorials
+                                        ->orderBy('category')
+                                        ->orderBy('title')
+                                        ->get();
+        
+        return Inertia::render('Dashboard', [ // Points to the new resources/js/Pages/Dashboard.tsx
+            'programResources' => $programResources,
+            'tutorialResources' => $tutorialResources,
+        ]);
     }
 }

@@ -45,6 +45,33 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
+// Helper function to determine progress and stages
+const getProjectProgressDetails = (currentStage: string, allStages: any[]) => {
+    const currentIndex = allStages.findIndex(s => s === currentStage);
+
+    if (currentIndex === -1) {
+        // If currentStage is not in allStages (e.g., custom string, null, or undefined)
+        return {
+            progressPercentage: 0,
+            completedStages: [],
+            pendingStages: [...allStages], // Show all stages as pending if current is unknown
+            currentStageDisplay: currentStage || 'No definida',
+        };
+    }
+
+    const progressPercentage = ((currentIndex + 1) / allStages.length) * 100;
+    const completedStages = allStages.slice(0, currentIndex);
+    const pendingStages = allStages.slice(currentIndex + 1);
+
+    return {
+        progressPercentage,
+        completedStages,
+        pendingStages,
+        currentStageDisplay: allStages[currentIndex],
+    };
+};
+
+
 export default function ManageProjects({
     initialProjects = [],
     potentialLeaders = [],
@@ -276,75 +303,121 @@ export default function ManageProjects({
                 {/* Projects Display Area */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredProjects.length > 0 ? (
-                        filteredProjects.map((project) => (
-                            <div key={project.id} className="bg-white dark:bg-gray-800 shadow-lg rounded-xl p-6 border border-sidebar-border/70 dark:border-sidebar-border flex flex-col justify-between">
-                                <div className="flex-1 min-w-0"> {/* Flex container for content */}
-                                    <div className="mb-3"> {/* Section for project name and stage */}
-                                        <h3 className="text-xl font-semibold text-indigo-600 dark:text-indigo-400 truncate">
-                                            {project.name}
-                                        </h3>
-                                        <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-                                            <span className="font-medium">Etapa:</span> {project.stage || 'No definida'}
-                                        </p>
-                                    </div>
 
-                                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-1 h-20 overflow-y-auto">{project.description || 'No description.'}</p>
-                                    <p className="text-xs text-gray-500 dark:text-gray-300">Status: <span className="font-medium capitalize">{project.status}</span></p>
-                                    <p className="text-xs text-gray-500 dark:text-gray-300">Leader: {project.leader ? `${project.leader.name} ${project.leader.lastname || ''}` : 'N/A'}</p>
-                                    
-                                    {project.end_date && ( // Equivalente a due_date para proyectos
-                                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                            Fecha Límite: {new Date(project.end_date).toLocaleDateString()}
-                                        </p>
-                                    )}
-                                    {project.start_date && ( // Equivalente a started_at_formatted para proyectos
-                                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                            Iniciado: {new Date(project.start_date).toLocaleDateString()}
-                                        </p>
-                                    )}
-                                    {project.status === 'finished' && project.end_date && (
-                                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                            Completado: {new Date(project.end_date).toLocaleDateString()}
-                                        </p>
-                                    )}
-                                    {/* Los campos como time_spent_formatted y developer_notes no están en la interfaz Project */}
+                        filteredProjects.map((project) => {
+                            const {
+                                progressPercentage,
+                                completedStages,
+                                pendingStages,
+                                currentStageDisplay
+                            } = getProjectProgressDetails(project.stage, projectStageList);
+
+                            return (
+                                <div key={project.id} className="bg-white dark:bg-gray-800 shadow-lg rounded-xl p-6 border border-sidebar-border/70 dark:border-sidebar-border flex flex-col justify-between">
+                                    <div className="flex-1 min-w-0"> {/* Flex container for content */}
+                                        <div className="mb-3"> {/* Section for project name */}
+                                            <h3 className="text-xl font-semibold text-indigo-600 dark:text-indigo-400 truncate">
+                                                {project.name}
+                                            </h3>
+                                        </div>
+
+                                        {/* Consulta de Estado en Tiempo Real */}
+                                        <div className="mb-4 space-y-3">
+                                            <div>
+                                                <div className="flex justify-between mb-1">
+                                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Progreso General</span>
+                                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{Math.round(progressPercentage)}%</span>
+                                                </div>
+                                                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                                                    <div
+                                                        className="bg-indigo-600 h-2.5 rounded-full transition-all duration-500 ease-out"
+                                                        style={{ width: `${progressPercentage}%` }}
+                                                    ></div>
+                                                </div>
+                                            </div>
+
+                                            <p className="text-sm text-gray-600 dark:text-gray-300">
+                                                <span className="font-medium">Estado General:</span> <span className="capitalize">{project.status}</span>
+                                            </p>
+                                            <p className="text-sm text-gray-600 dark:text-gray-300">
+                                                <span className="font-medium">Etapa Actual:</span> {currentStageDisplay}
+                                            </p>
+
+                                            {completedStages.length > 0 && (
+                                                <div className="text-sm text-gray-600 dark:text-gray-300">
+                                                    <span className="font-medium">Etapas Completadas:</span>
+                                                    <ul className="list-disc list-inside ml-4 text-xs">
+                                                        {completedStages.map((stage: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined) => <li key={`${project.id}-completed-${stage}`}>{stage}</li>)}
+                                                    </ul>
+                                                </div>
+                                            )}
+
+                                            {/* "Actividades pendientes" se interpreta como etapas pendientes */}
+                                            {pendingStages.length > 0 && (
+                                                <div className="text-sm text-gray-600 dark:text-gray-300">
+                                                    <span className="font-medium">Etapas Pendientes:</span>
+                                                    <ul className="list-disc list-inside ml-4 text-xs">
+                                                        {pendingStages.map((stage: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined) => <li key={`${project.id}-pending-${stage}`}>{stage}</li>)}
+                                                    </ul>
+                                                </div>
+                                            )}
+                                        </div>
+                                        {/* Fin Consulta de Estado en Tiempo Real */}
+
+                                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1 h-16 overflow-y-auto">{project.description || 'No description.'}</p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-300 mt-2">Líder: {project.leader ? `${project.leader.name} ${project.leader.lastname || ''}` : 'N/A'}</p>
+                                        
+                                        {project.start_date && (
+                                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                                Iniciado: {new Date(project.start_date).toLocaleDateString()}
+                                            </p>
+                                        )}
+                                        {project.end_date && (
+                                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                                Fecha Límite: {new Date(project.end_date).toLocaleDateString()}
+                                            </p>
+                                        )}
+                                        {project.status === 'finished' && project.end_date && (
+                                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                                Completado: {new Date(project.end_date).toLocaleDateString()}
+                                            </p>
+                                        )}
+                                    </div>
+                                    <div className="mt-4 flex justify-end flex-wrap gap-2">
+                                        {project.status !== 'finished' && (
+                                            <Button
+                                                variant={project.status === 'active' ? 'destructive_outline' : 'default_outline'}
+                                                size="sm"
+                                                onClick={() => handleSetProjectStatus(project.id, project.status)}
+                                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md shadow-sm disabled:opacity-50"
+                                            >
+                                                {project.status === 'active' ? 'Set Inactive' : 'Set Active'}
+                                            </Button>
+                                        )}
+                                        {project.status !== 'finished' && (
+                                            <select
+                                                value={project.stage || ''}
+                                                onChange={(e) => handleSetProjectStage(project.id, e.target.value as ProjectStage)}
+                                                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 h-[36px] min-w-[120px]"
+                                                title="Cambiar etapa del proyecto"
+                                            >
+                                                {(Array.isArray(projectStageList) ? projectStageList : []).map(stage => (
+                                                    <option key={stage} value={stage}>
+                                                        {stage}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        )}
+                                        <Link href={route('project-manager.projects.team.manage', project.id)}>
+                                            <Button variant="outline" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md shadow-sm disabled:opacity-50" size="sm">Manage Team</Button>
+                                        </Link>
+                                        <Link href={route('project-manager.projects.edit', project.id)}>
+                                            <Button variant="outline" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md shadow-sm disabled:opacity-50" size="sm">Edit Project</Button>
+                                        </Link>
+                                    </div>
                                 </div>
-                                <div className="mt-4 flex justify-end flex-wrap gap-2"> {/* Added flex-wrap and changed space-x-2 to gap-2 */}
-                                    {project.status !== 'finished' && (
-                                        <Button
-                                            variant={project.status === 'active' ? 'destructive_outline' : 'default_outline'}
-                                            size="sm"
-                                            onClick={() => handleSetProjectStatus(project.id, project.status)}
-                                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md shadow-sm disabled:opacity-50"
-                                        >
-                                            {project.status === 'active' ? 'Set Inactive' : 'Set Active'}
-                                        </Button>
-                                    )}
-                                    {/* Selector para cambiar la etapa del proyecto */}
-                                    {project.status !== 'finished' && (
-                                        <select
-                                            value={project.stage || ''} // Usar '' como fallback si stage es undefined/null
-                                            onChange={(e) => handleSetProjectStage(project.id, e.target.value as ProjectStage)}
-                                            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 h-[36px] min-w-[120px]" // Ajustar altura y añadir min-width
-                                            title="Cambiar etapa del proyecto"
-                                        >
-                                            {/* <option value="" disabled>Seleccionar etapa...</option> */}
-                                            {(Array.isArray(projectStageList) ? projectStageList : []).map(stage => (
-                                                <option key={stage} value={stage}>
-                                                    {stage}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    )}
-                                    <Link href={route('project-manager.projects.team.manage', project.id)}>
-                                        <Button variant="outline" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md shadow-sm disabled:opacity-50" size="sm">Manage Team</Button>
-                                    </Link>
-                                    <Link href={route('project-manager.projects.edit', project.id)}>
-                                        <Button variant="outline" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md shadow-sm disabled:opacity-50" size="sm">Edit Project</Button>
-                                    </Link>
-                                </div>
-                            </div>
-                        ))
+                            );
+                        })
                     ) : (
                         <div className="md:col-span-full text-center text-gray-500 dark:text-gray-400 py-8">
                             No projects match the current filters or no projects available.

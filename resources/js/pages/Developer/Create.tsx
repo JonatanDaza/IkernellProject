@@ -19,12 +19,19 @@ interface ActivityFormData {
     description: string;
     project_id: string; // Se manejará como string por el <select>, convertir a número al enviar
     due_date: string;
+    priority: string; // 'low', 'medium', 'high'
+    effort_estimation: string; // Horas, se enviará como número
 }
 
 interface MyActivitiesPageProps {
     projects: SimpleProject[]; // Lista de proyectos para asignar la actividad
     errors?: Record<string, string>; // Para errores de validación del backend
 }
+const priorityOptions = [
+    { value: 'low', label: 'Baja' },
+    { value: 'medium', label: 'Media' },
+    { value: 'high', label: 'Alta' },
+];
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -49,6 +56,8 @@ export default function MyActivities({ projects = [], errors = {} }: MyActivitie
             description: '',
             project_id: initialActive.length > 0 ? initialActive[0].id.toString() : '',
             due_date: '',
+            priority: 'medium', // Valor por defecto para prioridad
+            effort_estimation: '', // Valor por defecto para estimación
         };
     });
     // Eliminamos elapsedTimeInSeconds, timerIsRunning, intervalRef
@@ -127,6 +136,8 @@ export default function MyActivities({ projects = [], errors = {} }: MyActivitie
             ...formData,
             // Convert project_id to number or null; use null if empty string
             project_id: formData.project_id ? parseInt(formData.project_id, 10) : null,
+            priority: formData.priority,
+            effort_estimation: formData.effort_estimation ? parseInt(formData.effort_estimation, 10) : null,
             // Eliminamos time_logged_seconds, ya que el temporizador se ha quitado de la vista.
             // El controlador aún puede manejarlo si lo envía desde otro lugar o si lo define en el backend.
             // Si el controlador espera `time_logged_seconds`, podrías enviarlo como 0 o null aquí,
@@ -141,7 +152,10 @@ export default function MyActivities({ projects = [], errors = {} }: MyActivitie
                 setFormData({
                     name: '', description: '',
                     project_id: currentActiveProjects.length > 0 ? currentActiveProjects[0].id.toString() : '',
-                    due_date: '' });                // Eliminamos resetTimer();
+                    due_date: '',
+                    priority: 'medium', // Resetear prioridad
+                    effort_estimation: '' // Resetear estimación
+                });
                 setIsSubmitting(false);
             },
             onError: (formErrors) => {
@@ -243,6 +257,37 @@ export default function MyActivities({ projects = [], errors = {} }: MyActivitie
                                     className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                                 />
                                 {errors.due_date && <InputError message={errors.due_date} className="mt-2" />}
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <Label htmlFor="priority">Prioridad</Label>
+                                <select
+                                    id="priority"
+                                    name="priority"
+                                    value={formData.priority}
+                                    onChange={handleInputChange}
+                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                >
+                                    {priorityOptions.map(option => (
+                                        <option key={option.value} value={option.value}>{option.label}</option>
+                                    ))}
+                                </select>
+                                {errors.priority && <InputError message={errors.priority} className="mt-2" />}
+                            </div>
+                            <div>
+                                <Label htmlFor="effort_estimation">Estimación de Esfuerzo (horas)</Label>
+                                <Input
+                                    id="effort_estimation"
+                                    name="effort_estimation"
+                                    type="number"
+                                    value={formData.effort_estimation}
+                                    onChange={handleInputChange}
+                                    min="0"
+                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                />
+                                {errors.effort_estimation && <InputError message={errors.effort_estimation} className="mt-2" />}
                             </div>
                         </div>
 

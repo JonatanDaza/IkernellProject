@@ -1,13 +1,18 @@
 <?php
 
+use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\ProjectManagementController;
+use App\Http\Controllers\Developer\ErrorReportController;
+use App\Http\Controllers\Developer\InterruptionReportController;
 use App\Http\Controllers\DesarrolladorController; // Added for developer creation by coordinator
+use App\Http\Controllers\ReportController; // Importar el controlador de reportes
 use App\Http\Controllers\TestController;
 use App\Http\Controllers\Coordinator\ProjectManagementController as CoordinatorProjectManagementController; // Aliased import
 use App\Http\Controllers\ContactController; // Importar el nuevo controlador
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log; // Import the Log facade
 
@@ -17,6 +22,11 @@ Route::get('/', function () {
 })->name('home');
 
 Route::post('/contact/send', [ContactController::class, 'send'])->name('contact.send');
+
+Route::middleware(['auth', 'verified'])->group(function () {
+    // Corregir la ruta para que apunte al DashboardController y su método mainDashboard
+    Route::get('/dashboard', [DashboardController::class, 'mainDashboard'])->name('dashboard');
+});
 
 Route::get('/test-email', function () {
     try {
@@ -31,13 +41,7 @@ Route::get('/test-email', function () {
     }
 });
 
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
-    })->name('dashboard');
-});
-
-Route::middleware(['auth', 'verified', 'role:superadmin'])->group(function () {
+Route::middleware(['auth', 'verified', 'role:superadmin'])->prefix('superadmin')->name('superadmin.')->group(function () {
     Route::get('/superadmin/remanage', [TestController::class,'superadmin'])->name('superadmin');
 });
 
@@ -57,6 +61,19 @@ Route::middleware(['auth', 'verified', 'role:developer'])->group(function () {
     // ¡AÑADE ESTA RUTA PARA SOLUCIONAR EL ERROR!
     // Esta ruta POST se encargará de recibir los datos del formulario.
     Route::post('/developer/activities', [DesarrolladorController::class, 'storeActivity'])->name('developer.activities.store');
+
+    // Route for the Program Library Dashboard (accessible to developers, but will be made general)
+    // This route will be moved or made more generic below.
+    // For now, we assume the new general route will handle this.
+    // Route::get('/developer/dashboard', [DesarrolladorController::class, 'developerDashboard'])->name('developer.dashboard');
+
+    // Rutas para Reporte de Errores
+    Route::get('/developer/error-reports/create', [ErrorReportController::class, 'create'])->name('developer.error-reports.create');
+    Route::post('/developer/error-reports', [ErrorReportController::class, 'store'])->name('developer.error-reports.store');
+
+    // Rutas para Registro de Interrupciones
+    Route::get('/developer/interruption-reports/create', [InterruptionReportController::class, 'create'])->name('developer.interruption-reports.create');
+    Route::post('/developer/interruption-reports', [InterruptionReportController::class, 'store'])->name('developer.interruption-reports.store');
 
     Route::get('/developer/my-activities', [DesarrolladorController::class, 'myActivities'])->name('developer.activities');
     Route::post('/developer/activities/{actividadProyecto}/start', [DesarrolladorController::class, 'startActivity'])->name('developer.activities.start');
@@ -121,6 +138,26 @@ Route::middleware(['auth', 'verified', 'role:leader'])
         Route::delete('/projects/{project}/users/{user}/unlink', [ProjectManagementController::class, 'unlinkUserFromProject'])
             ->name('projects.users.unlink');
 });
+
+// The '/program-library' route is now handled by '/dashboard'.
+// You can remove it or, if you want to keep the old URL working for a while, redirect it.
+// Example of redirecting (optional):
+// Route::redirect('/program-library', '/dashboard', 301);
+
+// Rutas para Reportes (accesibles por roles apropiados, ej. coordinator, leader, admin)
+Route::middleware(['auth', 'verified', 'role:coordinator|leader|admin'])->prefix('reports')->name('reports.')->group(function () {
+    Route::get('/interruption-form', [ReportController::class, 'interruptionReportForm'])->name('interruption.form');
+    Route::post('/interruption-generate', [ReportController::class, 'generateInterruptionReport'])->name('interruption.generate');
+
+    Route::get('/activity-form', [ReportController::class, 'activityReportForm'])->name('activity.form');
+    Route::post('/activity-generate', [ReportController::class, 'generateActivityReport'])->name('activity.generate');
+
+    Route::get('/brazilian-company-form', [ReportController::class, 'brazilianCompanyReportForm'])->name('brazilian.form');
+    Route::post('/brazilian-company-generate', [ReportController::class, 'generateBrazilianCompanyReport'])->name('brazilian.generate');
+});
+
+
+
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
