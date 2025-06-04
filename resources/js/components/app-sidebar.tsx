@@ -64,25 +64,25 @@ const developerNavItems: NavItem[] = [
 let roleBasedNavItems = [...mainNavItems];
 if (userRole === 'superadmin') 
 {
-    roleBasedNavItems = [...roleBasedNavItems,...dashboardGeneralNavItems,...adminNavItems,...coordinatorNavItems,...leaderNavItems,...developerNavItems//,...superAdminNavItems
+    roleBasedNavItems = [...roleBasedNavItems,...adminNavItems,...coordinatorNavItems,...leaderNavItems,...developerNavItems//,...superAdminNavItems
 
     ];
 }
 if (userRole === 'admin') 
 {
-    roleBasedNavItems = [...roleBasedNavItems,...adminNavItems,...dashboardGeneralNavItems];
+    roleBasedNavItems = [...roleBasedNavItems,...adminNavItems];
 }
 if (userRole === 'coordinator') 
 {
-    roleBasedNavItems = [...roleBasedNavItems,...coordinatorNavItems,...dashboardGeneralNavItems];
+    roleBasedNavItems = [...roleBasedNavItems,...coordinatorNavItems];
 }
 if (userRole === 'leader') 
 {
-    roleBasedNavItems = [...roleBasedNavItems,...leaderNavItems,...dashboardGeneralNavItems];
+    roleBasedNavItems = [...roleBasedNavItems,...leaderNavItems];
 }
 if (userRole === 'developer') 
 {
-    roleBasedNavItems = [...roleBasedNavItems,...developerNavItems,...dashboardGeneralNavItems];
+    roleBasedNavItems = [...roleBasedNavItems,...developerNavItems];
 }
 
     return (

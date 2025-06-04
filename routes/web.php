@@ -25,7 +25,7 @@ Route::post('/contact/send', [ContactController::class, 'send'])->name('contact.
 
 Route::middleware(['auth', 'verified'])->group(function () {
     // Corregir la ruta para que apunte al DashboardController y su método mainDashboard
-    Route::get('/dashboard', [DashboardController::class, 'mainDashboard'])->name('dashboard');
+    Route::get('/developer/develop', [TestController::class,'developer'])->name('developer');
 });
 
 Route::get('/test-email', function () {
@@ -94,6 +94,8 @@ Route::middleware(['auth', 'verified', 'role:coordinator'])->prefix('coordinator
     Route::delete('/projects/{project}/users/{user}/unlink', [CoordinatorProjectManagementController::class, 'unlinkUserFromProject'])
     ->name('projects.users.unlink');
 
+    //successModals
+    
 
     Route::get('/developers', [DesarrolladorController::class, 'index'])
         ->name('developers.index'); // Genera el nombre: coordinator.developers.index, URL: /coordinator/developers
