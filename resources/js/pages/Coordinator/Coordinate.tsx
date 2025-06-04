@@ -329,7 +329,7 @@ export default function Coordinate({
                                             ) : (
                                                 project.users.map(user => (
                                                     <tr key={user.id} className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-                                                        <td className="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap">{`${user.name}${user.lastname ? ' ' + user.lastname : ''}`}</td>
+                                                        <td className="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap">{`${user.name}${user.lastname ? ` ${user.lastname}` : ''}`}</td>
                                                         <td className="px-6 py-4">{user.email}</td>
                                                         <td className="px-6 py-4 capitalize">{user.specialty || 'N/A'}</td>
                                                         <td className="px-6 py-4 capitalize">{user.role}</td>
@@ -365,9 +365,9 @@ export default function Coordinate({
                                                                 Unlink
                                                             </button>
                                                             <Link href={route('coordinator.developers.edit', { developer: user.id })}>
-                                                                <button className="px-2 py-1 text-xs bg-indigo-500 hover:bg-indigo-600 text-white rounded">
+                                                                <Button variant="outline" className="px-2 py-1 text-xs bg-blue-500 hover:bg-blue-600 text-white rounded" size="sm">
                                                                     Edit Developer
-                                                                </button>
+                                                                </Button>
                                                             </Link>
                                                         </td>
                                                     </tr>

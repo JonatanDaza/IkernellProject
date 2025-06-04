@@ -10,6 +10,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Http\JsonResponse;
 
 class ProjectManagementController extends Controller
 {
@@ -292,5 +293,15 @@ class ProjectManagementController extends Controller
         }
 
         return redirect()->back()->with('error', 'User is not assigned to this project.');
+    }
+    public function listProjectsForSelect(): JsonResponse
+    {
+        // Aquí puedes añadir lógica de autorización más específica si es necesario,
+        // aunque la ruta ya está protegida por roles.
+        $projects = Project::select('id', 'name')
+                            ->orderBy('name')
+                            ->get();
+
+        return response()->json($projects);
     }
 }

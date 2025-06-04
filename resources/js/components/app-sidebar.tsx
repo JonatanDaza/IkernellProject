@@ -4,8 +4,9 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { SharedData, type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid } from 'lucide-react';
+import { BookOpen, Check, Flag, Folder, HomeIcon, LayoutGrid, Nut, Shield, Users } from 'lucide-react';
 import AppLogo from './app-logo';
+import { config } from 'process';
 
 export function AppSidebar() {
 const {auth} = usePage<SharedData>().props;
@@ -13,16 +14,23 @@ const userRole = auth?.user?.role || 'user';
 
 const mainNavItems: NavItem[] = [
     {
+        title: 'Home',
+        href: '/',
+        icon: HomeIcon,
+    },
+];
+const dashboardGeneralNavItems: NavItem[] = [
+    {
         title: 'Dashboard',
         href: '/dashboard',
-        icon: LayoutGrid,
+        icon: Users,
     },
 ];
 const adminNavItems: NavItem[] = [
     {
         title: 'Manage',
         href: '/admin/manage',
-        icon: LayoutGrid,
+        icon: Shield,
     },
 ];
 const superAdminNavItems: NavItem[] = [
@@ -36,45 +44,45 @@ const coordinatorNavItems: NavItem[] = [
     {
         title: 'Coordinator',
         href: route('coordinator.coordinate'), // Use the new named route
-        icon: LayoutGrid,
+        icon: Nut,
     },
 ];
 const leaderNavItems: NavItem[] = [
     {
         title: 'Leader',
         href: route('project-manager.projects.manage'), // Correctly use the route() helper
-        icon: LayoutGrid,
+        icon: Flag,
     },
 ];
 const developerNavItems: NavItem[] = [
     {
         title: 'My Activities',
         href: '/developer/my-activities',
-        icon: LayoutGrid,
+        icon: Check,
     },
 ];
 let roleBasedNavItems = [...mainNavItems];
 if (userRole === 'superadmin') 
 {
-    roleBasedNavItems = [...roleBasedNavItems,...adminNavItems,...coordinatorNavItems,...leaderNavItems,...developerNavItems//,...superAdminNavItems
+    roleBasedNavItems = [...roleBasedNavItems,...dashboardGeneralNavItems,...adminNavItems,...coordinatorNavItems,...leaderNavItems,...developerNavItems//,...superAdminNavItems
 
     ];
 }
 if (userRole === 'admin') 
 {
-    roleBasedNavItems = [...roleBasedNavItems,...adminNavItems];
+    roleBasedNavItems = [...roleBasedNavItems,...adminNavItems,...dashboardGeneralNavItems];
 }
 if (userRole === 'coordinator') 
 {
-    roleBasedNavItems = [...roleBasedNavItems,...coordinatorNavItems];
+    roleBasedNavItems = [...roleBasedNavItems,...coordinatorNavItems,...dashboardGeneralNavItems];
 }
 if (userRole === 'leader') 
 {
-    roleBasedNavItems = [...roleBasedNavItems,...leaderNavItems];
+    roleBasedNavItems = [...roleBasedNavItems,...leaderNavItems,...dashboardGeneralNavItems];
 }
 if (userRole === 'developer') 
 {
-    roleBasedNavItems = [...roleBasedNavItems,...developerNavItems];
+    roleBasedNavItems = [...roleBasedNavItems,...developerNavItems,...dashboardGeneralNavItems];
 }
 
     return (

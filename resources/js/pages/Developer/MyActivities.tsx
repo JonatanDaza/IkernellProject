@@ -79,6 +79,8 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 export default function MyActivities({ auth, activities, successMessage: initialSuccessMessage }: PageProps) {
     const [completingActivityId, setCompletingActivityId] = useState<number | null>(null);
+    const [deletingActivityId, setDeletingActivityId] = useState<number | null>(null);
+    const [isDeletingOperation, setIsDeletingOperation] = useState(false);
     const [successMessage, setSuccessMessage] = useState<string | null>(initialSuccessMessage || null);
 
     const { data, setData, post, processing, errors, reset } = useForm<ActivityCompletionForm>({
@@ -111,6 +113,7 @@ export default function MyActivities({ auth, activities, successMessage: initial
     };
 
     const handleOpenCompleteModal = (activity: Activity) => {
+        setDeletingActivityId(null);
         setCompletingActivityId(activity.id);
         setData('developer_notes', activity.developer_notes || ''); // Pre-fill notes if any
     };
@@ -134,6 +137,37 @@ export default function MyActivities({ auth, activities, successMessage: initial
             preserveScroll: true,
         });
     };
+    const handleOpenDeleteConfirmation = (activityId: number) => {
+        setCompletingActivityId(null); // Cierra el modal de completar si está abierto
+        setDeletingActivityId(activityId);
+    };
+
+    const handleCancelDelete = () => {
+        setDeletingActivityId(null);
+    };
+
+    const confirmDeleteActivity = (activityId: number) => {
+        if (isDeletingOperation) return;
+        setIsDeletingOperation(true);
+        router.delete(route('developer.activities.destroy', activityId), { // Asegúrate que esta ruta exista
+            preserveScroll: true,
+            onSuccess: () => {
+                setDeletingActivityId(null);
+                setSuccessMessage('Actividad eliminada correctamente!');
+            },
+            onError: (errors) => {
+                console.error('Error eliminando actividad:', errors);
+                const messages = typeof errors === 'object' && errors !== null
+                    ? Object.values(errors).flat().join(' ')
+                    : 'Ocurrió un error inesperado.';
+                setSuccessMessage(`Error: ${messages || 'No se pudo eliminar la actividad.'}`);
+            },
+            onFinish: () => {
+                setIsDeletingOperation(false);
+            }
+        });
+    };
+
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}> {/* Using AppLayout */}
@@ -177,6 +211,7 @@ export default function MyActivities({ auth, activities, successMessage: initial
                             <ul role="list" className="divide-y divide-gray-200 dark:divide-gray-700">
                                 {activities.map((activity) => {
                                     const isCompletingThis = completingActivityId === activity.id;
+                                    const isDeletingThis = deletingActivityId === activity.id;
                                     return (
                                         <li key={activity.id} className="py-6">
                                             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
@@ -224,23 +259,34 @@ export default function MyActivities({ auth, activities, successMessage: initial
                                                 )}
                                             </div>
                                             <div className="mt-4 flex space-x-3">
-                                                {activity.status === 'pending' && (
-                                                    <button
-                                                        onClick={() => handleStartActivity(activity.id)}
-                                                        disabled={processing}
-                                                        className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-                                                    >
-                                                        Iniciar Actividad
-                                                    </button>
-                                                )}
-                                                {(activity.status === 'in_progress' || activity.status === 'pending') && !isCompletingThis && (
-                                                    <button
-                                                        onClick={() => handleOpenCompleteModal(activity)}
-                                                        className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                                                    >
-                                                        Completar Actividad
-                                                    </button>
-                                                )}
+                                                    {activity.status === 'pending' && !isCompletingThis && !isDeletingThis && (
+                                                        <button
+                                                            onClick={() => handleStartActivity(activity.id)}
+                                                            disabled={processing}
+                                                            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                                                        >
+                                                            Iniciar Actividad
+                                                        </button>
+                                                    )}
+                                                    {activity.status === 'in_progress' && !isCompletingThis && !isDeletingThis && (
+                                                        <button
+                                                            onClick={() => handleOpenCompleteModal(activity)}
+                                                            disabled={processing}
+                                                            className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                                                        >
+                                                            Completar Actividad
+                                                        </button>
+                                                    )}
+                                                    {/* Botón para Eliminar Actividad */}
+                                                    {(activity.status === 'pending' || activity.status === 'in_progress') && !isCompletingThis && !isDeletingThis && (
+                                                        <button
+                                                            onClick={() => handleOpenDeleteConfirmation(activity.id)}
+                                                            disabled={processing || isDeletingOperation}
+                                                            className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                                                        >
+                                                            Eliminar Actividad
+                                                        </button>
+                                                    )}
                                             </div>
                                             {isCompletingThis && (
                                                 <form onSubmit={submitCompleteActivity} className="mt-4 p-4 border border-gray-300 dark:border-gray-600 rounded-md">
@@ -261,6 +307,28 @@ export default function MyActivities({ auth, activities, successMessage: initial
                                                         <button type="submit" disabled={processing} className="px-3 py-1.5 text-sm text-white bg-green-600 rounded-md hover:bg-green-700 disabled:opacity-50">Confirmar Completada</button>
                                                     </div>
                                                 </form>
+                                            )}
+                                            {/* Sección de Confirmación de Eliminación */}
+                                            {isDeletingThis && (
+                                                <div className="mt-4 p-4 border border-red-300 dark:border-red-600 rounded-md bg-red-50 dark:bg-red-900/30">
+                                                    <p className="text-sm font-medium text-red-700 dark:text-red-300">
+                                                        ¿Estás seguro de que quieres eliminar esta actividad?
+                                                    </p>
+                                                    <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                                                        "{activity.description}" del proyecto "{activity.project_name}"
+                                                    </p>
+                                                    <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+                                                        Esta acción no se puede deshacer.
+                                                    </p>
+                                                    <div className="mt-3 flex justify-end space-x-2">
+                                                        <button type="button" onClick={handleCancelDelete} disabled={isDeletingOperation} className="px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-500 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600">
+                                                            Cancelar
+                                                        </button>
+                                                        <button type="button" onClick={() => confirmDeleteActivity(activity.id)} disabled={isDeletingOperation} className="px-3 py-1.5 text-sm text-white bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50">
+                                                            Confirmar Eliminación
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             )}
                                         </li>
                                     );

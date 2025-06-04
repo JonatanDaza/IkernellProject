@@ -48,8 +48,8 @@ class DesarrolladorController extends Controller
             'identification_number' => 'nullable|string|max:255|unique:users,identification_number',
             'address' => 'nullable|string|max:1000',
             'profession' => 'nullable|string|max:255',
-            'specialty' => ['required', 'string', Rule::in($this->getSpecialtyList())], // Use helper method
-            'worker_type' => ['required', 'string', Rule::in($this->getWorkerTypeList())], // Use helper method
+            'specialty' => ['nullable', 'string', Rule::in($this->getSpecialtyList())], // Use helper method
+            'worker_type' => ['nullable', 'string', Rule::in($this->getWorkerTypeList())], // Use helper method
             'profile_photo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048', // 2MB Max
         ]);
  
@@ -78,6 +78,33 @@ class DesarrolladorController extends Controller
         // Ajusta 'coordinator.coordinate' si tienes una ruta diferente para el dashboard del coordinador.
         return redirect()->route('coordinator.coordinate')->with('success', 'Developer registered successfully!');
     }
+    /**
+     * Show the form for editing the specified developer.
+     */
+    public function edit(User $developer): Response
+    {
+
+        $specialtyList = $this->getSpecialtyList();
+        $workerTypeList = $this->getWorkerTypeList();
+
+        return Inertia::render('Coordinator/Developers/Edit', [
+            'developer' => [ // Pass only necessary, non-sensitive data
+                'id' => $developer->id,
+                'name' => $developer->name,
+                'lastname' => $developer->lastname,
+                'email' => $developer->email,
+                'identification_number' => $developer->identification_number,
+                'address' => $developer->address,
+                'profession' => $developer->profession,
+                'specialty' => $developer->specialty,
+                'worker_type' => $developer->worker_type,
+                'profile_photo_url' => $developer->profile_photo_path ? Storage::url($developer->profile_photo_path) : null,
+                'is_active' => $developer->is_active,
+            ],
+            'specialtyList' => $specialtyList,
+            'workerTypeList' => $workerTypeList,
+        ]);
+    }
 
     /**
      * Display a listing of the developers.
@@ -96,38 +123,12 @@ class DesarrolladorController extends Controller
         ]);
     }
 
-
-
-    /**
-     * Show the form for editing the specified developer.
-     */
-    public function edit(User $developer): Response
-    {
-        // Ensure the user being edited is indeed a developer
-        if ($developer->role !== 'developer') {
-            abort(404); // Or redirect with an error
-        }
-
-        return Inertia::render('Coordinator/Developers/Edit', [
-            'developer' => $developer->only(
-                'id', 'name', 'lastname', 'email', 'identification_number', 
-                'address', 'profession', 'specialty', 'worker_type', 'profile_photo_path', 'is_active'
-                // Exclude password, date_of_birth
-            ),
-            'specialtyList' => $this->getSpecialtyList(),
-            'workerTypeList' => $this->getWorkerTypeList(),
-        ]);
-    }
-
     /**
      * Update the specified developer in storage.
      */
     public function update(Request $request, User $developer): \Illuminate\Http\RedirectResponse
     {
         // Ensure the user being edited is indeed a developer
-        if ($developer->role !== 'developer') {
-            abort(403, 'Cannot update this user type.');
-        }
 
         $validatedData = $request->validate([
             'name' => 'required|string|max:255',
@@ -137,8 +138,8 @@ class DesarrolladorController extends Controller
             'identification_number' => ['nullable', 'string', 'max:255', Rule::unique('users', 'identification_number')->ignore($developer->id)],
             'address' => 'nullable|string|max:1000',
             'profession' => 'nullable|string|max:255',
-            'specialty' => ['required', 'string', Rule::in($this->getSpecialtyList())],
-            'worker_type' => ['required', 'string', Rule::in($this->getWorkerTypeList())],
+            'specialty' => ['nullable', 'string', Rule::in($this->getSpecialtyList())],
+            'worker_type' => ['nullable', 'string', Rule::in($this->getWorkerTypeList())],
             'profile_photo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048', // 2MB Max
             'is_active' => 'required|boolean', // Allow updating active status
         ]);
@@ -292,6 +293,29 @@ class DesarrolladorController extends Controller
         return redirect()->back()->with('info', 'La actividad ya está completada o no se puede completar desde su estado actual.');
     }
 
+    /**
+     * Remove the specified activity from storage.
+     *
+     * @param  \App\Models\ActividadProyecto  $actividadProyecto
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function destroyActivity(ActividadProyecto $actividadProyecto): \Illuminate\Http\RedirectResponse
+    {
+        if ($actividadProyecto->user_id !== Auth::id()) {
+            return redirect()->back()->with('error', 'No tienes permiso para eliminar esta actividad.');
+        }
+
+        // Opcional: Podrías querer añadir lógica aquí para no permitir eliminar actividades
+        // que ya están completadas, o según otras reglas de negocio.
+        // Por ejemplo:
+        // if ($actividadProyecto->status === 'completed') {
+        //     return redirect()->back()->with('error', 'No se pueden eliminar actividades completadas.');
+        // }
+
+        $actividadProyecto->delete();
+
+        return redirect()->route('developer.activities')->with('successMessage', 'Actividad eliminada correctamente.');
+    }
     /**
      * Display the main dashboard, which includes the program library.
      * This page is accessible to all authenticated users.

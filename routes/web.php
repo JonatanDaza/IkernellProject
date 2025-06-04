@@ -78,9 +78,10 @@ Route::middleware(['auth', 'verified', 'role:developer'])->group(function () {
     Route::get('/developer/my-activities', [DesarrolladorController::class, 'myActivities'])->name('developer.activities');
     Route::post('/developer/activities/{actividadProyecto}/start', [DesarrolladorController::class, 'startActivity'])->name('developer.activities.start');
     Route::post('/developer/activities/{actividadProyecto}/complete', [DesarrolladorController::class, 'completeActivity'])->name('developer.activities.complete');
+    Route::delete('/developer/activities/{actividadProyecto}', [DesarrolladorController::class, 'destroyActivity'])->middleware(['auth', 'verified'])->name('developer.activities.destroy');
 });
 
-// Coordinator Routes - Using the dedicated CoordinatorProjectManagementController
+// Coordinator Routes
 Route::middleware(['auth', 'verified', 'role:coordinator'])->prefix('coordinator')
     ->name('coordinator.')->group(function () {
     Route::get('/coordinate', [CoordinatorProjectManagementController::class, 'coordinatePage'])
@@ -93,17 +94,21 @@ Route::middleware(['auth', 'verified', 'role:coordinator'])->prefix('coordinator
     Route::delete('/projects/{project}/users/{user}/unlink', [CoordinatorProjectManagementController::class, 'unlinkUserFromProject'])
     ->name('projects.users.unlink');
 
-    // Routes for Coordinator to manage Developers
+
     Route::get('/developers', [DesarrolladorController::class, 'index'])
-    ->name('developers.index');
+        ->name('developers.index'); // Genera el nombre: coordinator.developers.index, URL: /coordinator/developers
     Route::get('/developers/create', [DesarrolladorController::class, 'create'])
-    ->name('developers.create');
+        ->name('developers.create'); // Genera el nombre: coordinator.developers.create, URL: /coordinator/developers/create
     Route::post('/developers', [DesarrolladorController::class, 'store'])
-    ->name('developers.store');
-    Route::get('/developers/{developer}/edit', [DesarrolladorController::class, 'edit']) // This route is correct for showing the edit form
-    ->name('developers.edit');
-    Route::put('/developers/{developer}', [DesarrolladorController::class, 'update']) // Changed GET to PUT for the update action
-    ->name('developers.update');
+        ->name('developers.store'); // Genera el nombre: coordinator.developers.store, URL: /coordinator/developers
+    Route::get('/developers/{developer}/edit', [DesarrolladorController::class, 'edit'])
+        ->name('developers.edit'); // Genera el nombre: coordinator.developers.edit, URL: /coordinator/developers/{developer}/edit
+    Route::put('/developers/{developer}', [DesarrolladorController::class, 'update'])
+        ->name('developers.update'); // Genera el nombre: coordinator.developers.update, URL: /coordinator/developers/{developer}
+    Route::get('/coordinator/developers/{developer}/edit', [DesarrolladorController::class, 'edit'])
+        ->name('coordinator.developers.edit');
+    Route::put('/coordinator/developers/{developer}', [DesarrolladorController::class, 'update'])
+        ->name('coordinator.developers.update');
 });
 
 // Project Manager (Leader) Routes
@@ -144,6 +149,11 @@ Route::middleware(['auth', 'verified', 'role:leader'])
 // Example of redirecting (optional):
 // Route::redirect('/program-library', '/dashboard', 301);
 
+// Ruta para que el frontend obtenga la lista de proyectos para los formularios de reporte.
+// Se define aquí para no usar routes/api.php, según el requerimiento.
+Route::middleware(['auth', 'verified', 'role:coordinator|leader|admin'])->get('/api/projects', [ProjectManagementController::class, 'listProjectsForSelect'])
+    ->name('api.projects.for_select');
+
 // Rutas para Reportes (accesibles por roles apropiados, ej. coordinator, leader, admin)
 Route::middleware(['auth', 'verified', 'role:coordinator|leader|admin'])->prefix('reports')->name('reports.')->group(function () {
     Route::get('/interruption-form', [ReportController::class, 'interruptionReportForm'])->name('interruption.form');
@@ -153,7 +163,7 @@ Route::middleware(['auth', 'verified', 'role:coordinator|leader|admin'])->prefix
     Route::post('/activity-generate', [ReportController::class, 'generateActivityReport'])->name('activity.generate');
 
     Route::get('/brazilian-company-form', [ReportController::class, 'brazilianCompanyReportForm'])->name('brazilian.form');
-    Route::post('/brazilian-company-generate', [ReportController::class, 'generateBrazilianCompanyReport'])->name('brazilian.generate');
+    Route::get('/generate-brazilian-company-report', [ReportController::class, 'generateBrazilianCompanyReport'])->name('brazilian.company.generate_report'); // Path y método actualizados
 });
 
 
