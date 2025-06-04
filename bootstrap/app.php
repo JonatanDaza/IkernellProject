@@ -25,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'role'=>RoleMiddleware::class,
+            'Pdf' => Barryvdh\DomPDF\Facade\Pdf::class, // Asegúrate que esta línea exista y sea correcta
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

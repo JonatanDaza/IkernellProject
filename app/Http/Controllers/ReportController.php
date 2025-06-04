@@ -8,7 +8,7 @@ use App\Models\ActividadProyecto; // O tu modelo de Actividades
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response; // Para la descarga de CSV/TXT
 use Inertia\Inertia;
-use Barryvdh\DomPDF\Facade\Pdf; // Asegúrate que esta línea es correcta
+use Barryvdh\DomPDF\Facade\Pdf; // Esta línea es correcta si el paquete está configurado
 
 class ReportController extends Controller
 {
@@ -38,11 +38,12 @@ class ReportController extends Controller
             ->orderBy('date', 'desc')
             ->get();
 
-        $pdf = Pdf::loadView('reports.pdf.interruptions', [
+        $pdf = PDF::loadView('reports.pdf.interruptions', [
             'project' => $project,
             'interruptions' => $interruptions,
         ]);
-        return $pdf->download("reporte_interrupciones_{$project->name_slug}_{$projectId}.pdf"); // name_slug o un identificador similar
+        // Nota: Asegúrate de que $project->name_slug exista o usa $project->name si es más apropiado.
+        return $pdf->download("reporte_interrupciones_{$project->name_slug}_{$projectId}.pdf"); 
     }
 
     /**
@@ -75,6 +76,7 @@ class ReportController extends Controller
             'project' => $project,
             'activities' => $activities,
         ]);
+        // Nota: Asegúrate de que $project->name_slug exista o usa $project->name si es más apropiado.
         return $pdf->download("reporte_actividades_{$project->name_slug}_{$projectId}.pdf");
     }
 
@@ -100,7 +102,7 @@ class ReportController extends Controller
 
         $fileName = "reporte_brasil_proyecto_{$project->id}_" . date('YmdHis') . ".csv";
         $headers = [
-            "Content-type"        => "text/csv",
+            "Content-type"          => "text/csv",
             "Content-Disposition" => "attachment; filename=$fileName",
             "Pragma"              => "no-cache",
             "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
@@ -120,7 +122,7 @@ class ReportController extends Controller
             $projectDataRow = [$project->id, $project->name, $project->status, implode('; ', $project->milestones ?? [])];
 
             if ($project->actividadesProyectos->isEmpty() && $project->interruptionReports->isEmpty()) {
-                 fputcsv($file, array_pad($projectDataRow, count($columns), 'N/A'));
+                fputcsv($file, array_pad($projectDataRow, count($columns), 'N/A'));
             } else {
                 foreach ($project->actividadesProyectos as $activity) {
                     fputcsv($file, array_merge($projectDataRow, [$activity->id, $activity->description, $activity->status, $activity->user->name ?? 'No asignado'], array_fill(0, 6, 'N/A')));

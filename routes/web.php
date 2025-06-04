@@ -151,9 +151,6 @@ Route::middleware(['auth', 'verified', 'role:leader'])
 
 // Ruta para que el frontend obtenga la lista de proyectos para los formularios de reporte.
 // Se define aquí para no usar routes/api.php, según el requerimiento.
-Route::middleware(['auth', 'verified', 'role:coordinator|leader|admin'])->get('/api/projects', [ProjectManagementController::class, 'listProjectsForSelect'])
-    ->name('api.projects.for_select');
-
 // Rutas para Reportes (accesibles por roles apropiados, ej. coordinator, leader, admin)
 Route::middleware(['auth', 'verified', 'role:coordinator|leader|admin'])->prefix('reports')->name('reports.')->group(function () {
     Route::get('/interruption-form', [ReportController::class, 'interruptionReportForm'])->name('interruption.form');
@@ -164,6 +161,9 @@ Route::middleware(['auth', 'verified', 'role:coordinator|leader|admin'])->prefix
 
     Route::get('/brazilian-company-form', [ReportController::class, 'brazilianCompanyReportForm'])->name('brazilian.form');
     Route::get('/generate-brazilian-company-report', [ReportController::class, 'generateBrazilianCompanyReport'])->name('brazilian.company.generate_report'); // Path y método actualizados
+    Route::get('/api/projects', [ProjectManagementController::class, 'listProjectsForSelect'])
+    ->name('api.projects.for_select');
+
 });
 
 
