@@ -4,20 +4,23 @@ interface Project {
   id: number;
   name: string;
 }
+const API_PROJECTS_URL = '/api/projects';
+const API_REPORT_URL_BASE = '/reports/generate-brazilian-company-report';
+
 
 const BrazilianCompanyReportForm: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [isLoadingProjects, setIsLoadingProjects] = useState<boolean>(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProjects = async () => {
       setIsLoadingProjects(true);
       setFetchError(null);
       try {
-        // Asume que tienes un endpoint /api/projects para listar los proyectos
-        const response = await fetch('/api/projects');
+        const response = await fetch(API_PROJECTS_URL);
         if (!response.ok) {
           throw new Error(`Error al cargar proyectos: ${response.statusText}`);
         }
@@ -35,16 +38,14 @@ const BrazilianCompanyReportForm: React.FC = () => {
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
+    setSubmitError(null); // Limpiar errores de envío anteriores
     if (!selectedProjectId) {
       alert('Por favor, seleccione un proyecto.');
       return;
     }
 
-    // Asume que la ruta para generar el reporte es /reports/generate-brazilian-company-report
-    // y que acepta 'project_id' como parámetro GET.
-    // Ajusta esta URL según la configuración de tus rutas en Laravel.
-    const reportUrl = `/reports/generate-brazilian-company-report?project_id=${selectedProjectId}`;
-    
+    const reportUrl = `${API_REPORT_URL_BASE}?project_id=${selectedProjectId}`;
+
     // Redirige para iniciar la descarga del archivo CSV
     window.location.href = reportUrl;
   };
@@ -54,6 +55,7 @@ const BrazilianCompanyReportForm: React.FC = () => {
       <h2>Generar Reporte de Empresa Brasileña</h2>
 
       {fetchError && <p style={{ color: 'red' }}>Error: {fetchError}</p>}
+      {submitError && <p style={{ color: 'red' }}>{submitError}</p>}
 
       <div>
         <label htmlFor="project_id" style={{ marginRight: '10px' }}>Seleccionar Proyecto:</label>

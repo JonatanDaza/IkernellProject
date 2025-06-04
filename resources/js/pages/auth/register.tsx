@@ -90,22 +90,6 @@ export default function Register() {
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="identification_number">identification number</Label>
-                        <Input
-                            id="identification_number"
-                            type="identification_number"
-                            required
-                            tabIndex={2}
-                            autoComplete="identification_number"
-                            value={data.identification_number}
-                            onChange={(e) => setData('identification_number', e.target.value)}
-                            disabled={processing}
-                            placeholder="identification number"
-                        />
-                        <InputError message={errors.identification_number} />
-                    </div>
-
-                    <div className="grid gap-2">
                         <Label htmlFor="password">Password</Label>
                         <Input
                             id="password"

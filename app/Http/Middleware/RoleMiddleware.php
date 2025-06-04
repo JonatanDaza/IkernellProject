@@ -44,7 +44,7 @@ class RoleMiddleware
             return response()->view('Errors.UnauthorizedPage');
         }
 
-        \Log::info('RoleMiddleware: Acceso PERMITIDO para rol: ' . $userRole);
+        Log::info('RoleMiddleware: Acceso PERMITIDO para rol: ' . $userRole);
         // --- FIN DE DEPURACIÓN ---
 
         return $next($request);

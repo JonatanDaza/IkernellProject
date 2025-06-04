@@ -130,7 +130,7 @@ export default function CreateInterruptionReport({ flash }: { flash?: { success?
                                 id="date"
                                 value={data.date}
                                 onChange={e => setData('date', e.target.value)}
-                                className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                className="mt-1 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded-md focus:ring-2 pl-3 pr-10 py-2 text-base dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm shadow-sm"
                             />
                             {errors.date && <p className="mt-2 text-xs text-red-600 dark:text-red-400">{errors.date}</p>}
                         </div>
@@ -147,7 +147,7 @@ export default function CreateInterruptionReport({ flash }: { flash?: { success?
                                 value={data.estimated_duration}
                                 onChange={e => setData('estimated_duration', e.target.value)}
                                 placeholder="Ej: 30 minutos, 1 hora"
-                                className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                className="mt-1 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded-md focus:ring-2 pl-3 pr-10 py-2 text-base dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm shadow-sm"
                             />
                             {errors.estimated_duration && <p
                                 className="mt-2 text-xs text-red-600 dark:text-red-400">{errors.estimated_duration}</p>}
