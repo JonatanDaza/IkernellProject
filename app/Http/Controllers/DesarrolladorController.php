@@ -334,7 +334,7 @@ class DesarrolladorController extends Controller
                                         ->orderBy('title')
                                         ->get();
         
-        return Inertia::render('Dashboard', [ // Points to the new resources/js/Pages/Dashboard.tsx
+        return Inertia::render('dashboard', [ // Points to the new resources/js/Pages/Dashboard.tsx
             'programResources' => $programResources,
             'tutorialResources' => $tutorialResources,
         ]);
