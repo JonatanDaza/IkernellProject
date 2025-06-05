@@ -1,11 +1,11 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem, type User as GlobalUser, type PaginatedData } from '@/types'; // Import GlobalUser and PaginatedData
-import { Head, router, Link } from '@inertiajs/react'; // Import Link
+import { Head, router, Link, usePage } from '@inertiajs/react'; // Import Link
 import { Button } from '@/components/ui/button'; // Import Button component
 import React, { useState, type FormEvent, useEffect, useMemo } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
-        {
+    {
         title: 'Project Coordination',
         href: route('coordinator.coordinate'), // Use the new named route
     },
@@ -58,6 +58,8 @@ export default function Coordinate({
     const [selectedStatus, setSelectedStatus] = useState<boolean | ''>('');
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+    const { flash } = usePage().props;
+    console.log(flash)
     // Effect to clear success message timeout if component unmounts or message changes
     useEffect(() => {
         let timerId: NodeJS.Timeout;
@@ -117,13 +119,13 @@ export default function Coordinate({
             prevProjects.map(project =>
                 project.id === projectId
                     ? {
-                          ...project,
-                          users: project.users.map(user =>
-                              user.id === userId
-                                  ? { ...user, pivot: { ...user.pivot, is_active_in_project: isActive } }
-                                  : user,
-                          ),
-                      }
+                        ...project,
+                        users: project.users.map(user =>
+                            user.id === userId
+                                ? { ...user, pivot: { ...user.pivot, is_active_in_project: isActive } }
+                                : user,
+                        ),
+                    }
                     : project,
             ),
         );
@@ -219,8 +221,26 @@ export default function Coordinate({
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
+            {flash.success && <div className="m-4 p-3 bg-green-100 dark:bg-green-700 border border-green-400 dark:border-green-600 text-green-700 dark:text-green-100 rounded-md">
+                <svg className="inline-block w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11h-2v4h2V7zm0 6h-2v2h2v-2z" />
+                </svg>
+                <span className='font-medium'>{flash.success}</span>
+            </div>}
             <Head title="Project Coordination" />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
+                {/* Section to display developers if passed */}
+                <div>
+                    <div className="flex justify-between items-center">
+                        <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
+                            Registered Developers
+                        </h1>
+                        <Link href={route('coordinator.developers.create')}>
+                            <Button>Create Developer</Button>
+                            {/* Consider using a variant if available, e.g., <Button variant="default"> or <Button variant="primary"> */}
+                        </Link>
+                    </div>
+                </div>
                 {/* Search and Filter Section */}
                 <div className="bg-white dark:bg-gray-800 shadow-md rounded-xl border border-sidebar-border/70 dark:border-sidebar-border p-4">
                     <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">Filter Users in Projects</h2>
@@ -253,28 +273,15 @@ export default function Coordinate({
                         </div>
                     </form>
                 </div>
-                        {successMessage && (
-                            <div className="m-4 p-3 bg-green-100 dark:bg-green-700 border border-green-400 dark:border-green-600 text-green-700 dark:text-green-100 rounded-md">
-                                <p>{successMessage}</p>
-                            </div>
-                        )}
-
-                {/* Project Sections */}
-                {/* Section to display developers if passed */}
-                <div>
-                    <div className="flex justify-between items-center">
-                        <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
-                            Registered Developers
-                        </h1>
-                        <Link href={route('coordinator.developers.create')}>
-                            <Button>Create Developer</Button> 
-                            {/* Consider using a variant if available, e.g., <Button variant="default"> or <Button variant="primary"> */}
-                        </Link>
+                {successMessage && (
+                    <div className="m-4 p-3 bg-green-100 dark:bg-green-700 border border-green-400 dark:border-green-600 text-green-700 dark:text-green-100 rounded-md">
+                        <p>{successMessage}</p>
                     </div>
-                </div>
+                )}
+                {/* Project Sections */}
                 <div className="grid auto-rows-min gap-6 md:grid-cols-1"> {/* Projects stack vertically */}
                     {filteredProjects.length === 0 ? (
-                         <div className="bg-white dark:bg-gray-800 shadow-md rounded-xl border border-sidebar-border/70 dark:border-sidebar-border p-6 text-center text-gray-500 dark:text-gray-400">
+                        <div className="bg-white dark:bg-gray-800 shadow-md rounded-xl border border-sidebar-border/70 dark:border-sidebar-border p-6 text-center text-gray-500 dark:text-gray-400">
                             No projects found or no users match the current filters.
                         </div>
                     ) : (
@@ -295,8 +302,8 @@ export default function Coordinate({
                                             {assignableUsersList
                                                 .filter(assignableUser => !project.users.find(pu => pu.id === assignableUser.id)) // Filter out already linked users
                                                 .map(user => (
-                                                <option key={user.id} value={user.id}>{user.name} ({user.email})</option>
-                                            ))}
+                                                    <option key={user.id} value={user.id}>{user.name} ({user.email})</option>
+                                                ))}
                                         </select>
                                         <button
                                             onClick={() => handleLinkUser(project.id)}
@@ -334,11 +341,10 @@ export default function Coordinate({
                                                         <td className="px-6 py-4 capitalize">{user.specialty || 'N/A'}</td>
                                                         <td className="px-6 py-4 capitalize">{user.role}</td>
                                                         <td className="px-6 py-4">
-                                                            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                                                                user.pivot.is_active_in_project
+                                                            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${user.pivot.is_active_in_project
                                                                     ? 'bg-green-100 text-green-800 dark:bg-green-700 dark:text-green-100'
                                                                     : 'bg-red-100 text-red-800 dark:bg-red-700 dark:text-red-100'
-                                                            }`}>
+                                                                }`}>
                                                                 {user.pivot.is_active_in_project ? 'Active' : 'Inactive'}
                                                             </span>
                                                         </td>

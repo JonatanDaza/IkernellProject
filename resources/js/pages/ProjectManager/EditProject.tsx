@@ -31,11 +31,12 @@ interface ProjectData {
 interface EditProjectProps {
     project: ProjectData;
     potentialLeaders: SimpleUser[];
-    projectStatusList: ProjectStatus[]; // Use the defined type
-    currentUserId: number; // Podría no ser necesario aquí, pero se pasa por consistencia
+    projectStatusList: ProjectStatus[];
+    projectStageList: string[]; // <-- AGREGA ESTA LÍNEA
+    currentUserId: number;
 }
 
-export default function EditProject({ project, potentialLeaders, projectStatusList }: EditProjectProps) {
+export default function EditProject({ project, potentialLeaders, projectStatusList, projectStageList }: EditProjectProps) {
     const { data, setData, put, processing, errors, reset } = useForm({
         name: project.name || '',
         description: project.description || '',
@@ -43,6 +44,7 @@ export default function EditProject({ project, potentialLeaders, projectStatusLi
         start_date: project.start_date || '',
         end_date: project.end_date || '',
         leader_id: project.leader_id?.toString() || '',
+        stage: project.stage || (projectStageList && projectStageList.length > 0 ? projectStageList[0] : ''), // <-- AGREGA ESTA LÍNEA
     });
 
     const breadcrumbs: BreadcrumbItem[] = [
@@ -59,7 +61,8 @@ export default function EditProject({ project, potentialLeaders, projectStatusLi
     const submit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         put(route('project-manager.projects.update', project.id), {
-            // onSuccess: () => reset(), // Podrías no querer resetear en la edición
+            replace: true, // <-- Esto fuerza a Inertia a recargar la página y sus props
+            preserveScroll: true,
         });
     };
 
@@ -111,6 +114,23 @@ export default function EditProject({ project, potentialLeaders, projectStatusLi
                                 ))}
                             </select>
                             <InputError message={errors.status} className="mt-2" />
+                        </div>
+
+                        <div>
+                            <Label htmlFor="stage">Stage</Label>
+                            <select
+                                id="stage"
+                                name="stage"
+                                value={data.stage}
+                                onChange={(e) => setData('stage', e.target.value)}
+                                className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                required
+                            >
+                                {(Array.isArray(projectStageList) ? projectStageList : []).map((stageVal) => (
+                                    <option key={stageVal} value={stageVal}>{stageVal}</option>
+                                ))}
+                            </select>
+                            <InputError message={errors.stage} className="mt-2" />
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

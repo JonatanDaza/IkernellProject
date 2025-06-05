@@ -13,7 +13,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 // Define Role type first
 // Updated Role type based on new roles
-type Role = 'developer' | 'admin' | 'superadmin' | 'leader' | 'coordinator' | 'interested';
+type Role = 'developer' | 'admin' | 'leader' | 'coordinator' | 'interested';
 // Tipos para los datos de usuario (simulados)
 interface User {
     id: number;

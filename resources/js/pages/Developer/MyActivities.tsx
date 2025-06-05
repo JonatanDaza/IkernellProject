@@ -1,5 +1,5 @@
 import AppLayout from '@/layouts/app-layout'; // Cambiado de AuthenticatedLayout
-import { Head, useForm, router, Link } from '@inertiajs/react';
+import { Head, useForm, router, Link, usePage } from '@inertiajs/react';
 import { PageProps as InertiaPageProps } from '@inertiajs/core';
 import React, { useState, useEffect } from 'react'; // Added useEffect for potential messages
 import { User, SharedData, BreadcrumbItem } from '@/types'; // Asumiendo que tienes estos tipos definidos
@@ -95,7 +95,8 @@ export default function MyActivities({ auth, activities, successMessage: initial
         }
         return () => clearTimeout(timerId); // Cleanup on unmount or if successMessage changes
     }, [successMessage]);
-
+    const {flash} = usePage().props;
+    console.log(flash)
     const handleStartActivity = (activityId: number) => {
         router.post(route('developer.activities.start', activityId), {}, {
             preserveScroll: true,
@@ -171,8 +172,13 @@ export default function MyActivities({ auth, activities, successMessage: initial
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}> {/* Using AppLayout */}
+            {flash.success && <div className="m-4 p-3 bg-green-100 dark:bg-green-700 border border-green-400 dark:border-green-600 text-green-700 dark:text-green-100 rounded-md">
+                <svg className="inline-block w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11h-2v4h2V7zm0 6h-2v2h2v-2z" />
+                </svg>
+                <span className='font-medium'>{flash.success}</span>
+            </div>}
             <Head title="Mis Actividades" />
-
             <div className="flex h-full flex-1 flex-col gap-6 p-4 sm:p-6 lg:p-8">
                 <div className="flex justify-between items-center">
                     <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
@@ -185,7 +191,7 @@ export default function MyActivities({ auth, activities, successMessage: initial
                                 Crear Actividades
                             </button>
                         </Link>
-                        <Link
+                        {/* <Link
                             href={route('developer.error-reports.create')}
                             className="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-500 active:bg-red-700 focus:outline-none focus:border-red-700 focus:ring focus:ring-red-200 disabled:opacity-25 transition"
                         >
@@ -196,7 +202,7 @@ export default function MyActivities({ auth, activities, successMessage: initial
                             className="inline-flex items-center px-4 py-2 bg-yellow-500 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-yellow-400 active:bg-yellow-600 focus:outline-none focus:border-yellow-600 focus:ring focus:ring-yellow-200 disabled:opacity-25 transition"
                         >
                             Registrar Interrupción
-                        </Link>
+                        </Link> */}
                     </div>
                 </div>
                 {successMessage && (
@@ -247,9 +253,9 @@ export default function MyActivities({ auth, activities, successMessage: initial
                                                     </p>
                                                 )}
                                                 {activity.status === 'completed' && activity.time_spent_formatted && (
-                                                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                                       Tiempo Dedicado: {activity.time_spent_formatted}
-                                                   </p>
+                                                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                                        Tiempo Dedicado: {activity.time_spent_formatted}
+                                                    </p>
                                                 )}
                                                 {activity.developer_notes && (
                                                     <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-md">
@@ -259,34 +265,34 @@ export default function MyActivities({ auth, activities, successMessage: initial
                                                 )}
                                             </div>
                                             <div className="mt-4 flex space-x-3">
-                                                    {activity.status === 'pending' && !isCompletingThis && !isDeletingThis && (
-                                                        <button
-                                                            onClick={() => handleStartActivity(activity.id)}
-                                                            disabled={processing}
-                                                            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-                                                        >
-                                                            Iniciar Actividad
-                                                        </button>
-                                                    )}
-                                                    {activity.status === 'in_progress' && !isCompletingThis && !isDeletingThis && (
-                                                        <button
-                                                            onClick={() => handleOpenCompleteModal(activity)}
-                                                            disabled={processing}
-                                                            className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                                                        >
-                                                            Completar Actividad
-                                                        </button>
-                                                    )}
-                                                    {/* Botón para Eliminar Actividad */}
-                                                    {(activity.status === 'pending' || activity.status === 'in_progress') && !isCompletingThis && !isDeletingThis && (
-                                                        <button
-                                                            onClick={() => handleOpenDeleteConfirmation(activity.id)}
-                                                            disabled={processing || isDeletingOperation}
-                                                            className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
-                                                        >
-                                                            Eliminar Actividad
-                                                        </button>
-                                                    )}
+                                                {activity.status === 'pending' && !isCompletingThis && !isDeletingThis && (
+                                                    <button
+                                                        onClick={() => handleStartActivity(activity.id)}
+                                                        disabled={processing}
+                                                        className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                                                    >
+                                                        Iniciar Actividad
+                                                    </button>
+                                                )}
+                                                {activity.status === 'in_progress' && !isCompletingThis && !isDeletingThis && (
+                                                    <button
+                                                        onClick={() => handleOpenCompleteModal(activity)}
+                                                        disabled={processing}
+                                                        className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                                                    >
+                                                        Completar Actividad
+                                                    </button>
+                                                )}
+                                                {/* Botón para Eliminar Actividad */}
+                                                {(activity.status === 'pending' || activity.status === 'in_progress') && !isCompletingThis && !isDeletingThis && (
+                                                    <button
+                                                        onClick={() => handleOpenDeleteConfirmation(activity.id)}
+                                                        disabled={processing || isDeletingOperation}
+                                                        className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                                                    >
+                                                        Eliminar Actividad
+                                                    </button>
+                                                )}
                                             </div>
                                             {isCompletingThis && (
                                                 <form onSubmit={submitCompleteActivity} className="mt-4 p-4 border border-gray-300 dark:border-gray-600 rounded-md">

@@ -15,7 +15,7 @@ class ContactController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
-            'message' => 'required|string|min:10',
+            'message' => 'required|string|min:0',
         ]);
 
         if ($validator->fails()) {
@@ -35,7 +35,7 @@ class ContactController extends Controller
         try {
             Mail::to($recipientEmail)->send(new ContactFormMail($name, $email, $userMessage));
 
-            return redirect()->route('home')->with('success', '¡Gracias por tu mensaje! Nos pondremos en contacto contigo pronto.');
+            return redirect()->route('home')->withSuccess("¡Gracias por tu mensaje! Nos pondremos en contacto contigo pronto.");
 
         }catch (\Exception $e) {
              Log::error("Error al enviar correo de contacto: " . $e->getMessage() . "\n" . $e->getTraceAsString());

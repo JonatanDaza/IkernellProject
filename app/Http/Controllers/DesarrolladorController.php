@@ -76,7 +76,7 @@ class DesarrolladorController extends Controller
         ]);
         // Redirigir a una página relevante para el coordinador, por ejemplo, la página principal del coordinador.
         // Ajusta 'coordinator.coordinate' si tienes una ruta diferente para el dashboard del coordinador.
-        return redirect()->route('coordinator.coordinate')->with('success', 'Developer registered successfully!');
+        return redirect()->route('coordinator.coordinate')->withSuccess("Developer registrado correctamente!!");
     }
     /**
      * Show the form for editing the specified developer.
@@ -160,7 +160,7 @@ class DesarrolladorController extends Controller
         // Redirect to a developer listing page or the coordinator dashboard
         // For now, redirecting to coordinator dashboard.
         // Consider creating a route like 'coordinator.developers.index' in the future.
-        return redirect()->route('coordinator.coordinate')->with('success', 'Developer profile updated successfully!');
+        return redirect()->route('coordinator.coordinate')->withSuccess("Developer actualizado correctamente!!");
     }
 
     private function getSpecialtyList(): array
@@ -222,7 +222,7 @@ class DesarrolladorController extends Controller
         $activity->status = 'pending'; // Estado por defecto
         $activity->save();
 
-        return redirect()->route('developer.activities')->with('successMessage', 'Activity created successfully!');
+        return redirect()->route('developer.activities')->withSuccess( "Actividad creada correctamente!!");
     }
 
     public function myActivities(): Response
@@ -270,7 +270,7 @@ class DesarrolladorController extends Controller
             $actividadProyecto->status = 'in_progress';
             $actividadProyecto->started_at = Carbon::now();
             $actividadProyecto->save();
-            return redirect()->back()->with('success', 'Actividad iniciada.');
+            return redirect()->back()->with('success', 'Actividad iniciada correctamente!');
         }
         return redirect()->back()->with('info', 'La actividad ya fue iniciada o completada.');
     }
@@ -314,7 +314,7 @@ class DesarrolladorController extends Controller
 
         $actividadProyecto->delete();
 
-        return redirect()->route('developer.activities')->with('successMessage', 'Actividad eliminada correctamente.');
+        return redirect()->route('developer.activities')->withSuccess( "Actividad eliminada correctamente!");
     }
     /**
      * Display the main dashboard, which includes the program library.

@@ -1,5 +1,5 @@
 import React, { useState, type FormEvent } from 'react'; // Import useState and FormEvent
-import { Head, Link, router } from '@inertiajs/react'; // Import router
+import { Head, Link, router, usePage } from '@inertiajs/react'; // Import router
 import AppLogo from '@/components/app-logo'; // Asumiendo que tienes un componente de logo
 import TextLink from '@/components/text-link'; // Para enlaces de navegación si usas componentes de Laravel Starter Kit
 // import Footer from '@/components/Footer'; // Un componente de pie de página opcional
@@ -34,7 +34,8 @@ const Home: React.FC<HomeProps> = ({ success: initialSuccess, error: initialErro
     // o manejar mensajes locales si la lógica de feedback es solo frontend.
     // Para este ejemplo, asumiremos que el backend redirige con mensajes flash.
     // Si no, necesitarías estados locales para successMessage y errorMessage.
-
+    const { flash } = usePage().props;
+    console.log(flash)
 
     return (
         <>
@@ -361,6 +362,12 @@ const Home: React.FC<HomeProps> = ({ success: initialSuccess, error: initialErro
                                 </button>
                             </div>
                         </form>
+                        {flash.success && <div className="m-4 p-3 bg-green-100 dark:bg-green-700 border border-green-400 dark:border-green-600 text-green-700 dark:text-green-100 rounded-md">
+                            <svg className="inline-block w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11h-2v4h2V7zm0 6h-2v2h2v-2z" />
+                            </svg>
+                            <span className='font-medium'>{flash.success}</span>
+                        </div>}
                     </div>
                 </section>
             </main>

@@ -113,7 +113,7 @@ class ProjectManagementController extends Controller
             'project' => $project,
             'potentialLeaders' => $potentialLeaders,
             'projectStatusList' => $this->projectStatuses,
-            'projectStageList' => Project::getStages(),
+            'projectStageList' => Project::getStages(), // <-- ESTO YA ESTÁ BIEN
             'currentUserId' => Auth::id(),
         ]);
     }
@@ -152,7 +152,7 @@ class ProjectManagementController extends Controller
 
         $project->update($validatedData);
 
-        return redirect()->route('project-manager.projects.manage')->with('successMessage', 'Project updated successfully.');
+        return redirect()->route('project-manager.projects.manage')->withSuccess('Proyecto actualizado correctamente!');
     }
 
     /**

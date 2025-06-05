@@ -1,6 +1,6 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link, router } from '@inertiajs/react'; // Link para el botón de crear, router para acciones
+import { Head, Link, router, usePage } from '@inertiajs/react'; // Link para el botón de crear, router para acciones
 import React, { useState, type FormEvent, useEffect, useMemo } from 'react';
 import { Input } from '@/components/ui/input'; // Asumiendo que tienes estos componentes UI
 import { Button } from '@/components/ui/button';
@@ -76,16 +76,27 @@ export default function ManageProjects({
     initialProjects = [],
     potentialLeaders = [],
     projectStageList = ['Pendiente', 'Inicio', 'Planeacion', 'Ejecucion', 'Seguimiento', 'Cierre'] as ProjectStage[],
-    projectStatusList = ['active', 'inactive', 'finished'] as ProjectStatus[], // Ensure default matches the type
+    projectStatusList = ['active', 'inactive', 'finished'] as ProjectStatus[],
 }: ManageProjectsProps) {
     const [projects, setProjects] = useState<Project[]>(initialProjects);
-    const [searchTerm, setSearchTerm] = useState(''); // Para buscar por nombre de proyecto
+    const [searchTerm, setSearchTerm] = useState('');
     const [selectedStatus, setSelectedStatus] = useState<string>(''); // Para filtrar por estado del proyecto
     const [selectedLeader, setSelectedLeader] = useState<string>(''); // ID del líder seleccionado
     const [filterStartDate, setFilterStartDate] = useState('');
     const [filterEndDate, setFilterEndDate] = useState('');
     const [successMessage, setSuccessMessage] = useState<string | null>(null); // State for success/error messages
 
+    const { flash } = usePage().props;
+
+    // NUEVO: Mostrar mensaje de éxito si viene de flash.successMessage
+    useEffect(() => {
+        if (flash.successMessage) {
+            setSuccessMessage(flash.successMessage);
+        } else if (flash.success) {
+            setSuccessMessage(flash.success);
+        }
+    }, [flash.success, flash.successMessage]);
+    console.log(flash)
     useEffect(() => {
         setProjects(Array.isArray(initialProjects) ? initialProjects : []);
     }, [initialProjects]);
@@ -112,7 +123,6 @@ export default function ManageProjects({
             }
         });
     }, [projects]); // Considerar dependencias adicionales si se llama a handleSetProjectStage
-
     // Effect for success message timeout
     useEffect(() => {
         let timerId: NodeJS.Timeout;
@@ -163,13 +173,13 @@ export default function ManageProjects({
     const handleSetProjectStatus = (projectId: number, currentStatus: Project['status']) => {
         const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
         if (!confirm(`Are you sure you want to set project ${projectId} to "${newStatus}"?`)) {
-        // if (!confirm(`¿Está seguro de que desea cambiar el estado del proyecto ${projectId} a "${newStatus}"?`)) {
+            // if (!confirm(`¿Está seguro de que desea cambiar el estado del proyecto ${projectId} a "${newStatus}"?`)) {
             return;
         }
 
         // Asegúrate que la ruta 'project-manager.projects.update-status' esté definida correctamente
         // y que el controlador maneje la actualización y la sincronización con la etapa.
-        router.put(route('project-manager.projects.update-status', projectId), 
+        router.put(route('project-manager.projects.update-status', projectId),
             { status: newStatus },
             {
                 preserveScroll: true,
@@ -236,6 +246,12 @@ export default function ManageProjects({
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
+            {flash.success && <div className="m-4 p-3 bg-green-100 dark:bg-green-700 border border-green-400 dark:border-green-600 text-green-700 dark:text-green-100 rounded-md">
+                <svg className="inline-block w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11h-2v4h2V7zm0 6h-2v2h2v-2z" />
+                </svg>
+                <span className='font-medium'>{flash.success}</span>
+            </div>}
             <Head title="Manage Projects" />
             <div className="flex h-full flex-1 flex-col gap-6 p-4 sm:p-6 lg:p-8">
                 <div className="flex justify-between items-center">
@@ -243,7 +259,7 @@ export default function ManageProjects({
                         Projects Overview
                     </h1>
                     <Link href={route('project-manager.projects.create')}>
-                        <Button >Create New Project</Button> 
+                        <Button >Create New Project</Button>
                         {/* Consider using a variant if available, e.g., <Button variant="default"> or <Button variant="primary"> */}
                     </Link>
                 </div>
@@ -284,11 +300,11 @@ export default function ManageProjects({
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <Label htmlFor="filter_start_date" className="text-sm font-medium text-gray-700 dark:text-gray-300">Start Date From:</Label>
-                                <Input id="filter_start_date" type="date" value={filterStartDate} onChange={e => setFilterStartDate(e.target.value)} className="mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"/>
+                                <Input id="filter_start_date" type="date" value={filterStartDate} onChange={e => setFilterStartDate(e.target.value)} className="mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100" />
                             </div>
                             <div>
                                 <Label htmlFor="filter_end_date" className="text-sm font-medium text-gray-700 dark:text-gray-300">End Date To:</Label>
-                                <Input id="filter_end_date" type="date" value={filterEndDate} onChange={e => setFilterEndDate(e.target.value)} className="mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"/>
+                                <Input id="filter_end_date" type="date" value={filterEndDate} onChange={e => setFilterEndDate(e.target.value)} className="mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100" />
                             </div>
                         </div>
                         {/* <Button type="submit" className="mt-4">Apply Filters</Button> */}
@@ -366,7 +382,7 @@ export default function ManageProjects({
 
                                         <p className="text-sm text-gray-600 dark:text-gray-400 mb-1 h-16 overflow-y-auto">{project.description || 'No description.'}</p>
                                         <p className="text-xs text-gray-500 dark:text-gray-300 mt-2">Líder: {project.leader ? `${project.leader.name} ${project.leader.lastname || ''}` : 'N/A'}</p>
-                                        
+
                                         {project.start_date && (
                                             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                                                 Iniciado: {new Date(project.start_date).toLocaleDateString()}

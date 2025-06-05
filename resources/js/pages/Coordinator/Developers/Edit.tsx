@@ -1,5 +1,5 @@
-import React, { useState, ChangeEvent, FormEvent } from 'react';
-import { Head, useForm, router, Link } from '@inertiajs/react';
+import React, { useState, ChangeEvent, FormEvent, useEffect } from 'react';
+import { Head, useForm, router, Link, usePage } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Button } from '@/components/ui/button'; // Assuming you have this Button component
@@ -29,8 +29,22 @@ interface EditDeveloperProps {
     errors: Record<string, string>;
 }
 
+type EditDeveloperFormData = {
+    _method: string;
+    name: string;
+    lastname: string;
+    email: string;
+    identification_number?: string | null;
+    address?: string | null;
+    profession?: string | null;
+    specialty: string;
+    worker_type: string;
+    profile_photo: File | null;
+    is_active: boolean;
+};
+
 export default function EditDeveloper({ developer, specialtyList, workerTypeList }: EditDeveloperProps) {
-    const { data, setData, post, processing, errors } = useForm<any>({
+    const { data, setData, post, processing, errors } = useForm<EditDeveloperFormData>({
         _method: 'PUT',
         name: developer.name || '',
         lastname: developer.lastname || '',
@@ -40,7 +54,7 @@ export default function EditDeveloper({ developer, specialtyList, workerTypeList
         profession: developer.profession || '',
         specialty: developer.specialty || '',
         worker_type: developer.worker_type || '',
-        profile_photo: null as File | null,
+        profile_photo: null,
         is_active: developer.is_active,
     });
 
