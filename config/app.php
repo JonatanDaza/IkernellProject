@@ -126,4 +126,5 @@ return [
         // ... other aliases
         'Pdf' => Barryvdh\DomPDF\Facade\Pdf::class,
     ],
+    
 ];

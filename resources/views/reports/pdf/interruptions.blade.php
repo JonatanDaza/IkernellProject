@@ -2,18 +2,50 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <title>Reporte de Interrupciones - {{ $project->name }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">    <title>Reporte de Interrupciones - {{ $project->name }}</title>
     <style>
-        body { font-family: DejaVu Sans, sans-serif; margin: 0; font-size: 12px; }
-        .container { padding: 20px; }
-        h1 { text-align: center; margin-bottom: 20px; font-size: 18px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; font-size: 10px; text-transform: uppercase;}
-        td { font-size: 10px; }
-        .page-break { page-break-after: always; }
-        .no-data { text-align: center; padding: 20px; font-style: italic; }
+    body {
+        font-family: DejaVu Sans, Arial, Helvetica, sans-serif;
+        font-size: 12px;
+        color: #222;
+        margin: 0;
+        padding: 0;
+        background: #fff;
+    }
+    .container {
+        width: 95%;
+        margin: 0 auto;
+        padding: 10px 0;
+    }
+    h1 {
+        text-align: center;
+        font-size: 20px;
+        margin-bottom: 25px;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 15px;
+    }
+    th, td {
+        border: 1px solid #888;
+        padding: 7px 5px;
+        text-align: left;
+        vertical-align: top;
+    }
+    th {
+        background: #f2f2f2;
+        font-weight: bold;
+    }
+    tr:nth-child(even) td {
+        background: #fafafa;
+    }
+    .no-data {
+        text-align: center;
+        color: #888;
+        font-style: italic;
+        margin-top: 30px;
+    }
     </style>
 </head>
 <body>

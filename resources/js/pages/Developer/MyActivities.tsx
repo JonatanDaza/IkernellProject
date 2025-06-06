@@ -191,7 +191,7 @@ export default function MyActivities({ auth, activities, successMessage: initial
                                 Crear Actividades
                             </button>
                         </Link>
-                        {/* <Link
+                        <Link
                             href={route('developer.error-reports.create')}
                             className="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-500 active:bg-red-700 focus:outline-none focus:border-red-700 focus:ring focus:ring-red-200 disabled:opacity-25 transition"
                         >
@@ -202,7 +202,7 @@ export default function MyActivities({ auth, activities, successMessage: initial
                             className="inline-flex items-center px-4 py-2 bg-yellow-500 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-yellow-400 active:bg-yellow-600 focus:outline-none focus:border-yellow-600 focus:ring focus:ring-yellow-200 disabled:opacity-25 transition"
                         >
                             Registrar Interrupción
-                        </Link> */}
+                        </Link>
                     </div>
                 </div>
                 {successMessage && (

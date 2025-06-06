@@ -43,7 +43,7 @@ class ReportController extends Controller
             'interruptions' => $interruptions,
         ]);
         // Nota: Asegúrate de que $project->name_slug exista o usa $project->name si es más apropiado.
-        return $pdf->download("reporte_interrupciones_{$project->name_slug}_{$projectId}.pdf"); 
+        return $pdf->download("reporte_interrupciones_{$project->name}_{$projectId}.pdf"); 
     }
 
     /**
@@ -77,7 +77,7 @@ class ReportController extends Controller
             'activities' => $activities,
         ]);
         // Nota: Asegúrate de que $project->name_slug exista o usa $project->name si es más apropiado.
-        return $pdf->download("reporte_actividades_{$project->name_slug}_{$projectId}.pdf");
+        return $pdf->download("reporte_actividades_{$project->name}_{$projectId}.pdf");
     }
 
     /**

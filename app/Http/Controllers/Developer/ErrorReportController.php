@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Developer;
 
 use App\Http\Controllers\Controller;
+use App\Models\ReporteProyecto;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
@@ -29,13 +30,13 @@ class ErrorReportController extends Controller
 
         // Aquí iría la lógica para guardar el reporte de error en la base de datos.
         // Ejemplo:
-        // ErrorReport::create([
-        //     'user_id' => Auth::id(),
-        //     'error_type' => $validatedData['error_type'] === 'otro' ? $validatedData['error_type_other'] : $validatedData['error_type'],
-        //     'description' => $validatedData['description'],
-        //     'project_phase' => $validatedData['project_phase'] === 'otro' ? $validatedData['project_phase_other'] : $validatedData['project_phase'],
-        //     'severity' => $validatedData['severity'],
-        // ]);
+        ReporteProyecto::create([
+            'user_id' => Auth::id(),
+            'error_type' => $validatedData['error_type'] === 'otro' ? $validatedData['error_type_other'] : $validatedData['error_type'],
+            'description' => $validatedData['description'],
+            'project_phase' => $validatedData['project_phase'] === 'otro' ? $validatedData['project_phase_other'] : $validatedData['project_phase'],
+            'severity' => $validatedData['severity'],
+        ]);
 
         // Por ahora, solo redirigimos con un mensaje de éxito.
         return redirect()->route('developer.error-reports.create')->with('success', 'Reporte de error enviado exitosamente.');

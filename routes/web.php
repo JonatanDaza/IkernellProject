@@ -25,7 +25,7 @@ Route::post('/contact/send', [ContactController::class, 'send'])->name('contact.
 Route::middleware(['auth', 'verified'])->group(function () {
     // Corregir la ruta para que apunte al DashboardController y su método mainDashboard
     // Route::get('/developer/develop', [TestController::class,'developer'])->name('developer');
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'mainDashboard'])->name('dashboard');
 });
 
 Route::get('/test-email', function () {
