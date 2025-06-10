@@ -4,11 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Project;
 use App\Models\InterruptionReport;
-use App\Models\ActividadProyecto; // O tu modelo de Actividades
+use App\Models\ReporteProyecto; // O tu modelo de Actividades
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response; // Para la descarga de CSV/TXT
 use Inertia\Inertia;
-use Barryvdh\DomPDF\Facade\Pdf; // Esta línea es correcta si el paquete está configurado
+use Barryvdh\DomPDF\Facade\Pdf as PDF; // Esta línea es correcta si el paquete está configurado
 
 class ReportController extends Controller
 {
@@ -31,19 +31,18 @@ class ReportController extends Controller
         $request->validate(['project_id' => 'required|exists:projects,id']);
         $projectId = $request->project_id;
 
-        $project = Project::findOrFail($projectId);
-        // Asumiendo que tienes project_id en InterruptionReport y la relación 'user'
-        $interruptions = InterruptionReport::where('project_id', $projectId) 
-            ->with('user') // Para obtener el nombre del desarrollador que reportó
-            ->orderBy('date', 'desc')
-            ->get();
+        // Carga el proyecto y sus interrupciones con el usuario que reportó
+        $project = Project::with(['interruptionReports.user'])->findOrFail($projectId);
+
+        $interruptions = $project->interruptionReports;
 
         $pdf = PDF::loadView('reports.pdf.interruptions', [
             'project' => $project,
             'interruptions' => $interruptions,
         ]);
-        // Nota: Asegúrate de que $project->name_slug exista o usa $project->name si es más apropiado.
-        return $pdf->download("reporte_interrupciones_{$project->name}_{$projectId}.pdf"); 
+
+        $fileName = "reporte_interrupciones_{$project->name}_{$projectId}.pdf";
+        return $pdf->download($fileName);
     }
 
     /**
@@ -65,19 +64,17 @@ class ReportController extends Controller
         $request->validate(['project_id' => 'required|exists:projects,id']);
         $projectId = $request->project_id;
 
-        $project = Project::findOrFail($projectId);
-        $activities = ActividadProyecto::where('project_id', $projectId)
-            ->with('user') 
-            ->orderBy('status') 
-            ->orderBy('created_at')
-            ->get();
+        // Carga el proyecto y sus actividades con el usuario asignado
+        $project = Project::with(['reporteProyectos.user'])->findOrFail($projectId);
 
-        $pdf = Pdf::loadView('reports.pdf.activities', [
+        $activities = $project->reporteProyectos;
+
+        $pdf = PDF::loadView('reports.pdf.activities', [
             'project' => $project,
             'activities' => $activities,
         ]);
-        // Nota: Asegúrate de que $project->name_slug exista o usa $project->name si es más apropiado.
-        return $pdf->download("reporte_actividades_{$project->name}_{$projectId}.pdf");
+        $fileName = 'reporte_actividades_' . $project->name . '_' . $projectId . '.pdf';
+        return $pdf->download($fileName);
     }
 
     /**
@@ -92,48 +89,19 @@ class ReportController extends Controller
     }
 
     /**
-     * Genera el archivo plano (CSV) para la empresa brasileña.
+     * Genera el reporte en PDF para la empresa brasileña.
      */
     public function generateBrazilianCompanyReport(Request $request)
     {
         $request->validate(['project_id' => 'required|exists:projects,id']);
         $projectId = $request->project_id;
-        $project = Project::with(['actividadesProyectos.user', 'interruptionReports.user'])->findOrFail($projectId);
+        $project = Project::with(['reporteProyectos.user', 'interruptionReports.user'])->findOrFail($projectId);
 
-        $fileName = "reporte_brasil_proyecto_{$project->id}_" . date('YmdHis') . ".csv";
-        $headers = [
-            "Content-type"          => "text/csv",
-            "Content-Disposition" => "attachment; filename=$fileName",
-            "Pragma"              => "no-cache",
-            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
-            "Expires"             => "0"
-        ];
+        $pdf = PDF::loadView('reports.pdf.brazilian_company', [
+            'project' => $project,
+        ]);
 
-        $columns = [
-            'ID Proyecto', 'Nombre Proyecto', 'Estado Proyecto', 'Hitos Clave',
-            'ID Actividad', 'Descripción Actividad', 'Estado Actividad', 'Desarrollador Actividad',
-            'ID Interrupción', 'Tipo Interrupción', 'Fecha Interrupción', 'Duración Interrupción', 'Fase Afectada Interrupción', 'Reportó Interrupción'
-        ];
-
-        $callback = function() use ($project, $columns) {
-            $file = fopen('php://output', 'w');
-            fputcsv($file, $columns);
-
-            $projectDataRow = [$project->id, $project->name, $project->status, implode('; ', $project->milestones ?? [])];
-
-            if ($project->actividadesProyectos->isEmpty() && $project->interruptionReports->isEmpty()) {
-                fputcsv($file, array_pad($projectDataRow, count($columns), 'N/A'));
-            } else {
-                foreach ($project->actividadesProyectos as $activity) {
-                    fputcsv($file, array_merge($projectDataRow, [$activity->id, $activity->description, $activity->status, $activity->user->name ?? 'No asignado'], array_fill(0, 6, 'N/A')));
-                }
-                foreach ($project->interruptionReports as $interruption) {
-                    fputcsv($file, array_merge($projectDataRow, array_fill(0, 4, 'N/A'), [$interruption->id, $interruption->interruption_type, $interruption->date, $interruption->estimated_duration, $interruption->affected_project_phase, $interruption->user->name ?? 'No disponible']));
-                }
-            }
-            fclose($file);
-        };
-
-        return Response::stream($callback, 200, $headers);
+        $fileName = "reporte_brasil_proyecto_{$project->id}_" . date('YmdHis') . ".pdf";
+        return $pdf->download($fileName);
     }
 }

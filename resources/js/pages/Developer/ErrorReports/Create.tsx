@@ -1,25 +1,37 @@
 import React, { useState } from 'react';
 import { Head, useForm, Link } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout'; // Ajusta la ruta a tu AppLayout
-import { type BreadcrumbItem } from '@/types'; // Ajusta la ruta a tus tipos
+import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: route('dashboard') }, // Asumiendo que tienes una ruta dashboard
+    { title: 'Dashboard', href: route('dashboard') },
     { title: 'Reportar Error', href: route('developer.error-reports.create') }
 ];
 
+interface Project {
+    id: number;
+    name: string;
+}
+
 interface ErrorReportFormData {
+    project_id: string;
     error_type: 'funcional' | 'rendimiento' | 'seguridad' | 'otro' | '';
     error_type_other: string;
     description: string;
     project_phase: 'desarrollo' | 'pruebas' | 'produccion' | 'otro' | '';
     project_phase_other: string;
     severity: 'critica' | 'alta' | 'media' | 'baja' | '';
-    [key: string]: any; // Añade esta firma de índice para satisfacer FormDataType
+    [key: string]: any;
 }
- 
-export default function CreateErrorReport({ flash }: { flash?: { success?: string, error?: string } }) {
+
+interface Props {
+    projects: Project[];
+    flash?: { success?: string, error?: string };
+}
+
+export default function CreateErrorReport({ projects = [], flash }: Props) {
     const { data, setData, post, processing, errors, reset } = useForm<ErrorReportFormData>({
+        project_id: '',
         error_type: '',
         error_type_other: '',
         description: '',
@@ -38,7 +50,11 @@ export default function CreateErrorReport({ flash }: { flash?: { success?: strin
         });
     };
 
-    const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>, field: keyof ErrorReportFormData, setShowOther: (value: boolean) => void) => {
+    const handleSelectChange = (
+        e: React.ChangeEvent<HTMLSelectElement>,
+        field: keyof ErrorReportFormData,
+        setShowOther: (value: boolean) => void
+    ) => {
         const { value } = e.target;
         setData(field, value as ErrorReportFormData[typeof field]);
         if (value === 'otro') {
@@ -75,6 +91,30 @@ export default function CreateErrorReport({ flash }: { flash?: { success?: strin
                     )}
 
                     <form onSubmit={handleSubmit} className="space-y-6">
+                        {/* Proyecto */}
+                        <div>
+                            <label htmlFor="project_id"
+                                   className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Proyecto
+                            </label>
+                            <select
+                                id="project_id"
+                                name="project_id"
+                                value={data.project_id}
+                                onChange={e => setData('project_id', e.target.value)}
+                                className="mt-1 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded-md focus:ring-2 pl-3 pr-10 py-2 text-base dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm shadow-sm"
+                                required
+                            >
+                                <option value="">Seleccionar el proyecto relacionado</option>
+                                {projects.map((project) => (
+                                    <option key={project.id} value={project.id}>
+                                        {project.name}
+                                    </option>
+                                ))}
+                            </select>
+                            {errors.project_id && <p className="mt-2 text-xs text-red-600 dark:text-red-400">{errors.project_id}</p>}
+                        </div>
+
                         <div>
                             <label htmlFor="error_type"
                                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

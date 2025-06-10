@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Developer;
 
 use App\Http\Controllers\Controller;
+use App\Models\Project;
 use App\Models\ReporteProyecto;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -13,13 +14,16 @@ class ErrorReportController extends Controller
 {
     public function create()
     {
-        // Podrías pasar datos adicionales si es necesario, como listas de proyectos, etc.
-        return Inertia::render('Developer/ErrorReports/Create');
+        $projects = Project::orderBy('name')->get(['id', 'name']);
+        return Inertia::render('Developer/ErrorReports/Create', [
+            'projects' => $projects,
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
         $validatedData = $request->validate([
+            'project_id' => 'required|exists:projects,id',
             'error_type' => 'required|string|in:funcional,rendimiento,seguridad,otro',
             'description' => 'required|string|max:5000',
             'project_phase' => 'required|string|in:desarrollo,pruebas,produccion,otro',
@@ -32,6 +36,7 @@ class ErrorReportController extends Controller
         // Ejemplo:
         ReporteProyecto::create([
             'user_id' => Auth::id(),
+            'project_id' => $validatedData['project_id'],
             'error_type' => $validatedData['error_type'] === 'otro' ? $validatedData['error_type_other'] : $validatedData['error_type'],
             'description' => $validatedData['description'],
             'project_phase' => $validatedData['project_phase'] === 'otro' ? $validatedData['project_phase_other'] : $validatedData['project_phase'],

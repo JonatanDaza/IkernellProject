@@ -156,16 +156,14 @@ Route::middleware(['auth', 'verified', 'role:leader'])
 // Rutas para Reportes (accesibles por roles apropiados, ej. coordinator, leader, admin)
 Route::middleware(['auth', 'verified', 'role:coordinator|leader|admin'])->prefix('reports')->name('reports.')->group(function () {
     Route::get('/interruption-form', [ReportController::class, 'interruptionReportForm'])->name('interruption.form');
-    Route::post('/interruption-generate', [ReportController::class, 'generateInterruptionReport'])->name('interruption.generate');
+    Route::get('/generate-interruption-report', [ReportController::class, 'generateInterruptionReport'])->name('interruption.generate');
 
     Route::get('/activity-form', [ReportController::class, 'activityReportForm'])->name('activity.form');
-    Route::post('/activity-generate', [ReportController::class, 'generateActivityReport'])->name('activity.generate');
+    Route::get('/generate-activity-report', [ReportController::class, 'generateActivityReport'])->name('activity.generate');
 
     Route::get('/brazilian-company-form', [ReportController::class, 'brazilianCompanyReportForm'])->name('brazilian.form');
-    Route::get('/generate-brazilian-company-report', [ReportController::class, 'generateBrazilianCompanyReport'])->name('brazilian.company.generate_report'); // Path y método actualizados
-    Route::get('/api/projects', [ProjectManagementController::class, 'listProjectsForSelect'])
-    ->name('api.projects.for_select');
-
+    Route::get('/generate-brazilian-company-report', [ReportController::class, 'generateBrazilianCompanyReport'])->name('brazilian.company.generate_report');
+    Route::get('/api/projects', [ProjectManagementController::class, 'listProjectsForSelect'])->name('api.projects.for_select');
 });
 
 

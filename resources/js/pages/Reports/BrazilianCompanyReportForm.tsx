@@ -1,62 +1,25 @@
-import React, { useState, useEffect, FormEvent } from 'react';
+import React, { useState, FormEvent } from 'react';
 
 interface Project {
   id: number;
   name: string;
 }
-const API_PROJECTS_URL = '/api/projects';
-const API_REPORT_URL_BASE = '/reports/generate-brazilian-company-report';
 
+interface Props {
+  projects: Project[];
+}
 
-const BrazilianCompanyReportForm: React.FC = () => {
-  const [projects, setProjects] = useState<Project[]>([]);
+const REPORT_URL = '/reports/generate-brazilian-company-report';
+
+const BrazilianCompanyReportForm: React.FC<Props> = ({ projects }) => {
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
-  const [isLoadingProjects, setIsLoadingProjects] = useState<boolean>(false);
-  const [fetchError, setFetchError] = useState<string | null>(null);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchProjects = async () => {
-      setIsLoadingProjects(true);
-      setFetchError(null);
-      try {
-        const response = await fetch(API_PROJECTS_URL);
-        if (!response.ok) {
-          throw new Error(`Error al cargar proyectos: ${response.statusText}`);
-        }
-        const data: Project[] = await response.json();
-        setProjects(data);
-      } catch (err) {
-        setFetchError(err instanceof Error ? err.message : 'Ocurrió un error desconocido');
-      } finally {
-        setIsLoadingProjects(false);
-      }
-    };
-
-    fetchProjects();
-  }, []);
-
-  const handleSubmit = (event: FormEvent) => {
-    event.preventDefault();
-    setSubmitError(null); // Limpiar errores de envío anteriores
-    if (!selectedProjectId) {
-      alert('Por favor, seleccione un proyecto.');
-      return;
-    }
-
-    const reportUrl = `${API_REPORT_URL_BASE}?project_id=${selectedProjectId}`;
-
-    // Redirige para iniciar la descarga del archivo CSV
-    window.location.href = reportUrl;
-  };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form
+      method="GET"
+      action={REPORT_URL}
+    >
       <h2>Generar Reporte de Empresa Brasileña</h2>
-
-      {fetchError && <p style={{ color: 'red' }}>Error: {fetchError}</p>}
-      {submitError && <p style={{ color: 'red' }}>{submitError}</p>}
-
       <div>
         <label htmlFor="project_id" style={{ marginRight: '10px' }}>Seleccionar Proyecto:</label>
         <select
@@ -65,10 +28,9 @@ const BrazilianCompanyReportForm: React.FC = () => {
           value={selectedProjectId}
           onChange={(e) => setSelectedProjectId(e.target.value)}
           required
-          disabled={isLoadingProjects || projects.length === 0}
         >
           <option value="" disabled>
-            {isLoadingProjects ? 'Cargando proyectos...' : (projects.length === 0 ? 'No hay proyectos disponibles' : 'Seleccione un proyecto')}
+            {projects.length === 0 ? 'No hay proyectos disponibles' : 'Seleccione un proyecto'}
           </option>
           {projects.map((project) => (
             <option key={project.id} value={project.id}>
@@ -77,12 +39,10 @@ const BrazilianCompanyReportForm: React.FC = () => {
           ))}
         </select>
       </div>
-
-      {projects.length === 0 && !isLoadingProjects && !fetchError && (
+      {projects.length === 0 && (
         <p>No hay proyectos para mostrar. Asegúrese de que existan proyectos en el sistema.</p>
       )}
-
-      <button type="submit" disabled={isLoadingProjects || !selectedProjectId} style={{ marginTop: '15px' }}>
+      <button type="submit" disabled={!selectedProjectId} style={{ marginTop: '15px' }}>
         Generar Reporte
       </button>
     </form>

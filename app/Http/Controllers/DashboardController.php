@@ -25,7 +25,7 @@ class DashboardController extends Controller
 
         $chatUsers = User::where('id', '!=', optional(Auth::user())->id)->get(['id', 'name']);
 
-        return Inertia::render('Dashboard', [
+        return Inertia::render('dashboard', [
             'programResources' => $programResources,
             'tutorialResources' => $tutorialResources, // <-- ¡Agregado!
             'chatUsers' => $chatUsers,
@@ -35,7 +35,7 @@ class DashboardController extends Controller
     public function index()
     {
         // Renderiza la vista de Inertia (resources/js/pages/Dashboard.tsx)
-        return Inertia::render('Dashboard');
+        return Inertia::render('dashboard');
     }
 }
 
@@ -49,6 +49,6 @@ class DashboardController extends Controller
 //     public function index()
 //     {
 //         // Renderiza la vista de Inertia (resources/js/pages/Dashboard.tsx)
-//         return Inertia::render('Dashboard');
+//         return Inertia::render('dashboard');
 //     }
 // }

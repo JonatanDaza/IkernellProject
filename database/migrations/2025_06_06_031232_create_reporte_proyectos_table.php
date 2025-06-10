@@ -11,12 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('reporte_proyectos', function (Blueprint $table) {
-            $table->unsignedBigInteger('user_id')->after('id');
-            $table->string('error_type', 255)->after('user_id');
-            $table->text('description')->after('error_type');
-            $table->string('project_phase', 255)->after('description');
-            $table->string('severity', 50)->after('project_phase');
+        Schema::create('reporte_proyectos', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('user_id');
+            $table->string('error_type', 255);
+            $table->text('description');
+            $table->string('project_phase', 255);
+            $table->string('severity', 50);
+            $table->timestamps(); // <-- Agrega esta línea
 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
         });

@@ -1,14 +1,20 @@
 import React, { useState } from 'react';
 import { Head, useForm, Link } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout'; // Ajusta la ruta a tu AppLayout
-import { type BreadcrumbItem } from '@/types'; // Ajusta la ruta a tus tipos
+import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: route('dashboard') },
     { title: 'Registrar Interrupción', href: route('developer.interruption-reports.create') }
 ];
 
+interface Project {
+    id: number;
+    name: string;
+}
+
 interface InterruptionReportFormData {
+    project_id: string;
     interruption_type: 'problema_tecnico' | 'reunion' | 'solicitud_externa' | 'personal' | 'otro' | '';
     interruption_type_other: string;
     date: string;
@@ -16,14 +22,20 @@ interface InterruptionReportFormData {
     affected_project_phase: 'planificacion' | 'desarrollo' | 'pruebas' | 'despliegue' | 'otro' | '';
     affected_project_phase_other: string;
     description: string;
-    [key: string]: any; // Añade esta firma de índice para satisfacer FormDataType
+    [key: string]: any;
 }
 
-export default function CreateInterruptionReport({ flash }: { flash?: { success?: string, error?: string } }) {
+interface Props {
+    projects: Project[];
+    flash?: { success?: string, error?: string };
+}
+
+export default function CreateInterruptionReport({ projects, flash }: Props) {
     const { data, setData, post, processing, errors, reset } = useForm<InterruptionReportFormData>({
+        project_id: '',
         interruption_type: '',
         interruption_type_other: '',
-        date: new Date().toISOString().split('T')[0], // Default to today
+        date: new Date().toISOString().split('T')[0],
         estimated_duration: '',
         affected_project_phase: '',
         affected_project_phase_other: '',
@@ -62,21 +74,39 @@ export default function CreateInterruptionReport({ flash }: { flash?: { success?
                     </h1>
 
                     {flash?.success && (
-                        <div
-                            className="mb-6 p-4 text-sm text-green-700 bg-green-100 rounded-lg dark:bg-green-900 dark:text-green-300"
-                            role="alert">
+                        <div className="mb-6 p-4 text-sm text-green-700 bg-green-100 rounded-lg dark:bg-green-900 dark:text-green-300" role="alert">
                             {flash.success}
                         </div>
                     )}
                     {flash?.error && (
-                        <div
-                            className="mb-6 p-4 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-900 dark:text-red-300"
-                            role="alert">
+                        <div className="mb-6 p-4 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-900 dark:text-red-300" role="alert">
                             {flash.error}
                         </div>
                     )}
 
                     <form onSubmit={handleSubmit} className="space-y-6">
+                        <div>
+                            <label htmlFor="project_id"
+                                   className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Proyecto
+                            </label>
+                            <select
+                                id="project_id"
+                                name="project_id"
+                                value={data.project_id}
+                                onChange={e => setData('project_id', e.target.value)}
+                                className="mt-1 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded-md focus:ring-2 pl-3 pr-10 py-2 text-base dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm shadow-sm"
+                                required
+                            >
+                                <option value="">Seleccionar el proyecto relacionado</option>
+                                {projects.map((project) => (
+                                    <option key={project.id} value={project.id}>
+                                        {project.name}
+                                    </option>
+                                ))}
+                            </select>
+                            {errors.project_id && <p className="mt-2 text-xs text-red-600 dark:text-red-400">{errors.project_id}</p>}
+                        </div>
                         <div>
                             <label htmlFor="interruption_type"
                                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

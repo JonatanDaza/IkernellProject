@@ -54,4 +54,18 @@ class Project extends Model
     {
         return $this->belongsTo(User::class, 'leader_id');
     }
+
+    public function actividadesProyectos()
+    {
+        return $this->hasMany(\App\Models\ActividadProyecto::class, 'project_id');
+    }
+
+    public function interruptionReports()
+    {
+        return $this->hasMany(\App\Models\InterruptionReport::class, 'project_id');
+    }
+    public function reporteProyectos()
+    {
+        return $this->hasMany(ReporteProyecto::class, 'project_id');
+    }
 }

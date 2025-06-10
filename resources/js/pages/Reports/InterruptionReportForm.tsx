@@ -1,5 +1,5 @@
-import React from 'react';
-import { Head, useForm, Link } from '@inertiajs/react';
+import React, { useState } from 'react';
+import { Head, Link } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem } from '@/types';
 
@@ -13,21 +13,15 @@ interface InterruptionReportFormProps {
     flash?: { success?: string; error?: string };
 }
 
+const REPORT_URL = '/reports/generate-interruption-report';
+
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: route('dashboard') },
     { title: 'Reporte de Interrupciones', href: route('reports.interruption.form') }
 ];
 
 export default function InterruptionReportForm({ projects, flash }: InterruptionReportFormProps) {
-    const { data, setData, post, processing, errors } = useForm({
-        project_id: projects.length > 0 ? projects[0].id : '',
-    });
-
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        // Esta ruta ahora espera un POST para generar y mostrar el reporte
-        post(route('reports.interruption.generate'));
-    };
+    const [selectedProjectId, setSelectedProjectId] = useState<string>('');
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -46,7 +40,7 @@ export default function InterruptionReportForm({ projects, flash }: Interruption
                         </div>
                     )}
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                    <form method="GET" action={REPORT_URL} className="space-y-6">
                         <div>
                             <label htmlFor="project_id"
                                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -55,28 +49,33 @@ export default function InterruptionReportForm({ projects, flash }: Interruption
                             <select
                                 id="project_id"
                                 name="project_id"
-                                value={data.project_id}
-                                onChange={(e) => setData('project_id', e.target.value)}
+                                value={selectedProjectId}
+                                onChange={(e) => setSelectedProjectId(e.target.value)}
+                                required
                                 className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm"
                             >
-                                {projects.length === 0 && <option value="">No hay proyectos disponibles</option>}
+                                <option value="" disabled>
+                                    {projects.length === 0
+                                        ? 'No hay proyectos disponibles'
+                                        : 'Seleccione un proyecto'}
+                                </option>
                                 {projects.map((project) => (
                                     <option key={project.id} value={project.id}>
-                                        {project.name}
+                                         {project.name} {/*({project.id})*/} 
                                     </option>
                                 ))}
                             </select>
-                            {errors.project_id &&
-                                <p className="mt-2 text-xs text-red-600 dark:text-red-400">{errors.project_id}</p>}
                         </div>
-
+                        {projects.length === 0 && (
+                            <p>No hay proyectos para mostrar. Asegúrese de que existan proyectos en el sistema.</p>
+                        )}
                         <div className="pt-2 flex justify-end">
                             <button
                                 type="submit"
-                                disabled={processing || projects.length === 0}
+                                disabled={!selectedProjectId}
                                 className="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
                             >
-                                {processing ? 'Generando...' : 'Generar Reporte'}
+                                Generar Reporte
                             </button>
                         </div>
                     </form>

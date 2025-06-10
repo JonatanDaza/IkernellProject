@@ -58,10 +58,10 @@ export default function Dashboard({ programResources, tutorialResources }: Progr
                     <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 flex flex-col items-center text-center">
                         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Reporte para Brasil</h2>
                         <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                            Genera el archivo plano (CSV) con datos de proyectos.
+                            Genera el archivo (Pdf) con datos de proyectos.
                         </p>
                         <Link href={route('reports.brazilian.form')} className="mt-auto inline-flex items-center px-4 py-2 bg-purple-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-purple-700 active:bg-purple-800 focus:outline-none focus:border-purple-900 focus:ring ring-purple-300 disabled:opacity-25 transition ease-in-out duration-150">
-                            Generar CSV
+                            Generar reporte
                         </Link>
                     </div>
                 </div>
